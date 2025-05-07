@@ -351,16 +351,6 @@ public:
     }
 
 
-    //void deliverDamage(Enemy* enemy) {
-    //    
-
-    //    if (isJumping && hitbox.checkCollision(enemy->getHitbox()) ) {
-    //        cout << "Damage delivered";
-    //        enemy->takeDamage(1);
-    //        //reduce enemy hp
-    //    }
-    //}
-
     void takeDamage(const Hitbox& other) {
 
         if (!isInvincible && (hitbox.checkCollision(other))) {
@@ -499,7 +489,7 @@ public:
 
         stillRightTexture.loadFromFile("Sprites/sonic/sonic_right_still.png");
         walkRightTexture.loadFromFile("Sprites/sonic/sonic_walk_right.png");
-        stillLeftTexture.loadFromFile("Sprites/sonic/sonic_left_still.png");
+        stillLeftTexture.loadFromFile("Data/sonic.png");
         walkLeftTexture.loadFromFile("Sprites/sonic/sonic_walk_left.png");
 
         // Start with the right-facing still texture
