@@ -261,7 +261,7 @@ int main()
         t.render(window, offsetX);
 
 
-        EM.updateEnemies(window, enemy, count, offsetX, deltaTime.asSeconds(),activePlayer->getHitbox(), activePlayer->getIsJumping());
+        EM.updateEnemies(window, enemy, count, offsetX, deltaTime.asSeconds(),activePlayer);
 
 
         display_level(window, height, width, lvl, wallSprite1, wallSprite2, cell_size, offsetX);

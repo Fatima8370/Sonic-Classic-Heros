@@ -5,6 +5,7 @@
 #include <SFML/Window.hpp>
 #include <SFML/Audio.hpp>
 #include "Hitbox.h"
+#include "Character.h"
 #include <cstdlib>
 #include <ctime>
 
@@ -244,6 +245,10 @@ public:
         hitbox = Hitbox(x, y, 50.0f, 50.0f);
     }
 
+	Hitbox& getBulletHitbox() {
+		return bulletHitbox;
+	}
+
     void draw(RenderWindow& window, float offset) override {
         if (!died)
         {
@@ -261,18 +266,7 @@ public:
         }
     }
 
-    // Optional: Helper method to visualize bullet hitbox for debugging
-    void drawBulletHitbox(RenderWindow& window, float offset) {
-        if (bulletActive) {
-            RectangleShape bulletRect;
-            bulletRect.setPosition(bulletHitbox.getX() - offset, bulletHitbox.getY());
-            bulletRect.setSize(Vector2f(bulletHitbox.getWidth(), bulletHitbox.getHeight()));
-            bulletRect.setFillColor(Color::Transparent);
-            bulletRect.setOutlineColor(Color::Green);
-            bulletRect.setOutlineThickness(1.0f);
-            window.draw(bulletRect);
-        }
-    }
+    
 
     void update(float playerX, float playerY, float deltaTime) override {
         if (detectArea(playerX, playerY) && !died) {
@@ -337,7 +331,7 @@ public:
             float length = sqrt(dx * dx + dy * dy);
 
             bulletDX = 6.0f * dx / length;
-            bulletDY = 6.0f * dy / length;
+            bulletDY = 8.0f * dy / length;
 
             bulletSprite.setPosition(x, y);
             bulletActive = true;
@@ -675,8 +669,15 @@ public:
 
     // Modified updateEnemies method to use player hitbox instead of coordinates
     void updateEnemies(RenderWindow& window, Enemies* enemy[], int count, float offsetX,
-        float deltaTime, const Hitbox& playerHitbox, bool attack)
+        float deltaTime, Player * player)
     {
+       const Hitbox playerHitbox = player->getHitbox();
+
+		bool attack = player->getIsJumping();
+
+		
+
+
         // Only print debug info occasionally to avoid console spam
         static int frameCounter = 0;
         frameCounter++;
@@ -700,6 +701,16 @@ public:
                 // Handle attack/die logic with hitbox
                 if (attack) {
                     enemy[i]->die(playerHitbox);
+				}
+				else if (enemy[i]->isDead()) {
+					// Handle enemy death
+					cout << "Enemy " << i << " is dead!" << endl;
+					delete enemy[i];
+					enemy[i] = nullptr;
+					count--;
+				}
+                else {
+                    player->takeDamage(enemy[i]->getHitbox());
                 }
 
                 // Check if shooting enemy's bullets hit player
@@ -708,6 +719,7 @@ public:
                     if (shootingEnemy->checkBulletCollision(playerHitbox)) {
                         // Player is hit by bullet, handle damage here
                         cout << "Player hit by bullet!" << endl;
+                        player->takeDamage(shootingEnemy->getBulletHitbox());
                         // Add code to damage player
                     }
                 }

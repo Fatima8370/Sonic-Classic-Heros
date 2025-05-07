@@ -198,7 +198,7 @@ public:
     virtual void activateSpecialAbility() = 0;
     virtual void applySpecialAbilityEffect(Event ev) {}
 
-    virtual void draw(RenderWindow& window, float direction, float offset) override {
+     virtual void draw(RenderWindow& window, float direction, float offset)  {
         playerSprite.setPosition(position[0]-offset, position[1]);
 
         if (direction < 0) {
@@ -208,7 +208,7 @@ public:
             playerSprite.setScale(scaleX, scaleY);
         }
         window.draw(playerSprite);
-    }
+     }
 
     bool getIsMoving() const { return isMoving; }
 
@@ -359,6 +359,9 @@ public:
             invincibilityTimer = invincibilityLimit;
             hp -= 10;
 
+			cout << "Player took damage! HP: " << hp << endl;
+			cout << "Player is now invincible for " << invincibilityLimit << " seconds." << endl;
+
         }
         if (hp <= 0) {
             lives--;
@@ -369,6 +372,7 @@ public:
             //lose condition;
             cout << "Game over!" << endl;
             exit(0);
+            /// EXIT SCREEN OR DISPLAY GAME OVER
         }
     }
 
@@ -513,7 +517,7 @@ public:
     }
 
 
-    void draw(RenderWindow& window, float direction, float offset) override {
+    virtual void draw (RenderWindow& window, float direction, float offset) override {
         // Select the appropriate texture based on movement and direction
         if (direction < 0) { // Left direction
             if (isMoving) {
@@ -734,12 +738,7 @@ public:
         // First, handle active player movement
         Player* activePlayer = players[activePlayerIndex];
 
-        // Debug active player state
-       /* cout << "Active player position: (" << activePlayer->getPosition()[0]
-            << ", " << activePlayer->getPosition()[1]
-            << "), velocity: (" << activePlayer->getVelocityX()
-            << ", " << activePlayer->getVelocityY()
-            << "), onGround: " << (activePlayer->getIsOnGround() ? "yes" : "no") << endl;*/
+        
 
         activePlayer->update(grid, cell_size);
 

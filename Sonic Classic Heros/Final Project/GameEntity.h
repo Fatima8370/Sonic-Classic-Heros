@@ -12,6 +12,8 @@
 class GameEntity {
 
 protected:
+
+	//RenderWindow& window;
 	float position[2];
 	char symbol;
 	Hitbox hitbox;
@@ -31,7 +33,7 @@ public:
 	}
 
 
-	virtual void draw(RenderWindow& window, float directionFaced = 0.0f, float offset = 0) = 0;
+	//virtual void draw(RenderWindow& window, float directionFaced = 0.0f, float offset = 0) = 0;
 	virtual void update(char** grid, const int cell_size = 64) = 0;
 
 	virtual bool checkCollision(const GameEntity& other) const {
