@@ -11,6 +11,18 @@
 using namespace sf;
 using namespace std;
 
+
+/*
+
+Wall (unbreakable) : when player collides with it moving horizontally, it is not able to move 
+Wall (breakable) : when player collides, specifically knuckles, wall breaks 
+Spikes : player takes damage when collide from top 
+Platform : Player can jump from underneath to the top to stand on the platform , top collision? 
+LevelTrigger : the bricks fall down after top collision
+
+all used using hitbox
+*/
+
 // Base class for all obstacles
 class Obstacles {
 protected:
@@ -31,7 +43,7 @@ public:
         window.draw(sprite);
     }
 
-    virtual void checkCollision(Hitbox* hitbox) = 0;
+    virtual void checkCollision(Player *player) = 0;
 
     virtual ~Obstacles() {}
 };
@@ -52,8 +64,60 @@ public:
         sprite.setTexture(texture);
     }
 
-    void checkCollision(Hitbox* hitbox) override {
-        // Wall-specific collision logic can go here
+    void checkCollision(Player* player) override {
+
+        Hitbox hitbox = player->getHitbox();
+
+        float charLeft = hitbox.getX();
+        float charRight = charLeft + hitbox.getWidth();
+        float charTop = hitbox.getY();
+        float charBottom = charTop + hitbox.getHeight();
+
+        // Wall boundaries
+        float wallLeft = x;
+        float wallRight = x + sprite.getLocalBounds().width;
+        float wallTop = y;
+        float wallBottom = y + sprite.getLocalBounds().height;
+
+        // Check for overlap
+        if (charRight > wallLeft && charLeft < wallRight &&
+            charBottom > wallTop && charTop < wallBottom) {
+
+            // Calculate overlap amounts
+            float overlapLeft = charRight - wallLeft;
+            float overlapRight = wallRight - charLeft;
+            float overlapTop = charBottom - wallTop;
+            float overlapBottom = wallBottom - charTop;
+
+            // Find smallest overlap to determine push direction
+            float minOverlap = std::min({ overlapLeft, overlapRight, overlapTop, overlapBottom });
+
+            // Apply collision resolution based on smallest overlap
+            if (minOverlap == overlapLeft) {
+                // Colliding from left
+                player->setPosition(wallLeft - hitbox.getWidth(), charTop);
+            }
+            else if (minOverlap == overlapRight) {
+                // Colliding from right
+                player->setPosition(wallRight, charTop);
+            }
+            else if (minOverlap == overlapTop) {
+                // Colliding from top
+                player->setPosition(charLeft, wallTop - hitbox.getHeight());
+                player->stopFalling(); // Player landed on top
+            }
+            else if (minOverlap == overlapBottom) {
+                // Colliding from bottom
+                player->setPosition(charLeft, wallBottom);
+                player->stopJumping(); // Player hit their head
+            }
+
+            // If wall is breakable and player is attacking, break it
+            if (breakable && player->isAttacking()) {
+                // Mark wall for deletion or play break animation
+                // This depends on how you manage destruction
+            }
+        }
     }
 };
 
@@ -66,8 +130,28 @@ public:
         sprite.setTexture(texture);
     }
 
-    void checkCollision(Hitbox* hitbox) override {
-        // Damage player if they collide with spikes (add the logic for it)
+    void checkCollision(Player * player) override {
+
+        Hitbox hitbox = player->getHitbox();
+
+
+        float charLeft = hitbox.getX();
+        float charRight = charLeft + hitbox.getWidth();
+        float charTop = hitbox.getY();
+        float charBottom = charTop + hitbox.getHeight();
+
+        // Spike boundaries
+        float spikeLeft = x;
+        float spikeRight = x + sprite.getLocalBounds().width;
+        float spikeTop = y;
+        float spikeBottom = y + sprite.getLocalBounds().height;
+
+        // Check for overlap
+        if (charRight > spikeLeft && charLeft < spikeRight &&
+            charBottom > spikeTop && charTop < spikeBottom) {
+            // Player touched spikes - apply damage
+            player->takeDamage(10); // Assuming you have a takeDamage method
+        }
     }
 };
 
@@ -89,36 +173,33 @@ public:
 
 
     // Check if hitbox collides with the platform (lands on top of it)
-    void checkCollision(Hitbox* hitbox) override{
-    //    // Hitbox's boundaries
-    //    float charLeft = hitbox->getX();
-    //    float charRight = charLeft + hitbox->getWidth();
-    //    float charTop = hitbox->getY();
-    //    float charBottom = charTop + hitbox->getHeight();
+    void checkCollision(Player * player) override{
 
-    //    // Platform's boundaries (the position and size)
-    //    float platformLeft = this->getX();
-    //    float platformRight = platformLeft + this->getWidth();
-    //    float platformTop = this->getY();
-    //    float platformBottom = platformTop + this->getHeight();
+        Hitbox hitbox = player->getHitbox();
 
-    //    // Check if the hitbox is falling onto the platform from above
-    //    if (charRight > platformLeft && charLeft < platformRight &&
-    //        charBottom <= platformTop && charBottom + 5 > platformTop) {
-    //        // The hitbox has landed on the platform
-    //        hitbox->setPosition(charLeft, platformTop - hitbox->getHeight());  // Place hitbox on top of the platform
-    //        hitbox->stopFalling();  // Stop the falling motion
-    //    }
 
-    //    // Check if the hitbox has fallen into a bottomless pit ('b')
-    //    int charX = static_cast<int>(charLeft / 32);  // Assuming each grid cell is 32px wide
-    //    int charY = static_cast<int>(charBottom / 32);  // Assuming each grid cell is 32px tall
+        float charLeft = hitbox.getX();
+        float charRight = charLeft + hitbox.getWidth();
+        float charTop = hitbox.getY();
+        float charBottom = charTop + hitbox.getHeight();
 
-    //    // Ensure we are within bounds of the grid before accessing
-    //    if (charX >= 0 && charX < gridWidth && charY < gridHeight && grid[charY][charX] == 'b') {
-    //        // The hitbox has fallen into a bottomless pit
-    //        hitbox->die();  // Call a method to handle player death
-    //    }
+        // Platform boundaries
+        float platformLeft = x;
+        float platformRight = x + sprite.getLocalBounds().width;
+        float platformTop = y;
+        float platformBottom = y + sprite.getLocalBounds().height;
+
+        // Check if character is falling (moving downward)
+        bool isFalling = player->getVelocityY() > 0;
+
+        // Check for top collision (only when falling)
+        if (isFalling &&
+            charRight > platformLeft && charLeft < platformRight &&
+            charBottom >= platformTop && charBottom <= platformTop + 10) {
+            // Character landed on platform
+            player->setPosition(charLeft, platformTop - hitbox.getHeight());
+            player->stopFalling();
+        }
     }
 };
 
@@ -143,12 +224,15 @@ public:
         sprite.setTexture(texture);
     }
 
-    void checkCollision(Hitbox* hitbox) override {
+    void checkCollision(Player * player) override {
         // Detect if the hitbox interacts with the level trigger
-        float charLeft = hitbox->getX();
-        float charRight = charLeft + hitbox->getWidth();
-        float charTop = hitbox->getY();
-        float charBottom = charTop + hitbox->getHeight();
+
+        Hitbox hitbox = player->getHitbox();
+
+        float charLeft = hitbox.getX();
+        float charRight = charLeft + hitbox.getWidth();
+        float charTop = hitbox.getY();
+        float charBottom = charTop + hitbox.getHeight();
 
         float triggerLeft = x;
         float triggerRight = triggerLeft + width;
@@ -180,7 +264,7 @@ public:
 
 class ObstacleFactory {
 private:
-    static const int MAX_OBSTACLES = 100;
+    static const int MAX_OBSTACLES = 500;
     Obstacles* obstacles[MAX_OBSTACLES];
     int count;
 
@@ -215,10 +299,11 @@ public:
         }
     }
 
-    void checkAllCollisions(Hitbox* hitbox) {
+    void checkAllCollisions(Player * player) {
+
         for (int i = 0; i < count; ++i) {
             if (obstacles[i])
-                obstacles[i]->checkCollision(hitbox);
+                obstacles[i]->checkCollision(player);
         }
     }
 
@@ -236,6 +321,20 @@ public:
             }
         }
     }
+
+    void update(RenderWindow& window, Player* player, float offset) {
+
+
+		for (int i = 0; i < count; ++i) {
+			if (obstacles[i]) {
+				obstacles[i]->render(window, offset);
+				obstacles[i]->checkCollision(player);
+			}
+		}
+
+
+    }
+
 
     Obstacles** getAllObstacles() {
         return obstacles;

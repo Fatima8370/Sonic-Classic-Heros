@@ -95,16 +95,7 @@ int main()
     // TESTING OBSTACLES
 
 
-    Wall w(false);
-
-    Wall w2(true);
-
-    Spikes s;
-
-    Platform p;
-
-    LevelTrigger t;
-
+   
 
 
     //////////////// PLAYER SHIT ////////////////////
@@ -127,22 +118,25 @@ int main()
 
     ////////// PLAYER SHIT ///////////////////////
 
-    generateLevel(lvl, 14, 200);
+    //generateLevel(lvl, 14, 200);
 
     const int TILE_SIZE = 64;
     const int GRID_WIDTH = 200;
     const int GRID_HEIGHT = 14;
     int currentLevel = 1;
 
-    //char** grid = LevelGenerator::generateLevel(currentLevel);
+    
 
+    char** grid = LevelGenerator::generateLevel(currentLevel);
 
+    ObstacleFactory obs;
 
+    Obstacles** level1;
     
    ////////////////////// // ENEMY SHIT//
 
     
-    EnemyFactory EM(lvl, GRID_HEIGHT, GRID_WIDTH, currentLevel);
+    EnemyFactory EM(grid, GRID_HEIGHT, GRID_WIDTH, currentLevel);
 
     const char* enemyTypes[] = { "batbrain", "beebot", "motobug", "crabmeat" };
     const int numTypes = 4;
@@ -160,7 +154,6 @@ int main()
         }
     }
 
-   // EnemyFactory b;
 
 
 
@@ -245,26 +238,8 @@ int main()
         factory.update(lvl, 64);
 
 
-        w.setPosition(0,0);
-        w.render(window, offsetX);
+       
 
-        w2.setPosition(64, 0);
-        w2.render(window, offsetX);
-
-        s.setPosition(2*64, 0);
-        s.render(window, offsetX);
-
-        p.setPosition(3*64, 0);
-        p.render(window, offsetX);
-
-        t.setPosition(5*64, 0);
-        t.render(window, offsetX);
-
-
-        EM.updateEnemies(window, enemy, count, offsetX, deltaTime.asSeconds(),activePlayer);
-
-
-        display_level(window, height, width, lvl, wallSprite1, wallSprite2, cell_size, offsetX);
 
       
         window.display();

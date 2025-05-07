@@ -125,10 +125,9 @@ public:
         hitbox = Hitbox(x, y, 50.0f, 50.0f);
     }
 
-    // IMPORTANT: Override the update method to handle following behavior
     void update(float playerX, float playerY, float deltaTime) override {
         if (detectArea(playerX, playerY) && !died) {
-            // Debug print when enemy starts following
+
             cout << "Following player at " << playerX << ", " << playerY << endl;
 
             followPlayer(playerX);
@@ -682,7 +681,7 @@ public:
         static int frameCounter = 0;
         frameCounter++;
 
-        if (frameCounter % 60 == 0 && count > 0) { // Print debug every 60 frames
+        if (frameCounter % 100 == 0 && count > 0) { // Print debug every 60 frames
             cout << "Updating " << count << " enemies. Player at ("
                 << playerHitbox.getX() << ", " << playerHitbox.getY() << ")" << endl;
             frameCounter = 0;

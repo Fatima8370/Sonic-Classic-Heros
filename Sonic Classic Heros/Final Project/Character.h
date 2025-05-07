@@ -188,7 +188,7 @@ public:
     static void setHP(int newHP) { hp = newHP; }
 
     //htibox
-    Hitbox& getHitbox() { return hitbox; }
+    Hitbox & getHitbox() { return hitbox; }
     void updateHitbox() {
         hitbox.updateHitbox(position[0] + hitboxFactorX, position[1] + hitboxFactorY);
     }
