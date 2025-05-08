@@ -378,6 +378,22 @@ public:
 
     static int getLives() { return lives; }
 
+	void stopFalling() {
+		
+		velocity[1] = 0.0f;
+		isJumping = false;
+		
+	}
+
+	void stopJumping() {
+		isJumping = false;
+	}
+
+	bool isAttacking() {
+        // CHARACTER MUST BE KNUCKLES
+		return true;
+	}
+
 }; int Player::hp = 100, Player::lives = 3;
 
 

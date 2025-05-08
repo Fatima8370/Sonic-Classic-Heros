@@ -486,7 +486,7 @@ public:
 
 class EnemyFactory {
 private:
-    static const int MAX_ENEMIES = 50;
+    static const int MAX_ENEMIES = 20;
     Enemies* enemies[MAX_ENEMIES];
     float usedX[MAX_ENEMIES];
     int count;
