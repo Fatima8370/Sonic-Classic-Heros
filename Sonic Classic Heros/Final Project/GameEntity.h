@@ -71,6 +71,7 @@ public:
 
 
 	virtual void draw(RenderWindow& window, float directionFaced = 0.0f, float offset = 0) = 0;
+
 	virtual void update(char** grid, const int cell_size = 64) = 0;
 
 	virtual void checkCollision(Player* player) = 0;	

@@ -4,6 +4,7 @@
 #include "BuildLevel.h"
 #include "Character.h"
 #include "Hitbox.h"
+#include "GameEntity.h"
 
 #include <iostream>
 #include <SFML/Graphics.hpp>
@@ -24,7 +25,7 @@ all used using hitbox
 */
 
 // Base class for all obstacles
-class Obstacles {
+class Obstacles : public GameEntity {
 protected:
     char type;
     Sprite sprite;
@@ -38,12 +39,12 @@ public:
         sprite.setPosition(x, y);
     }
 
-    virtual void render(RenderWindow& window, float offset) {
+    void render(RenderWindow& window, float offset) override {
         sprite.setPosition(x - offset, y);  // Apply offset for scrolling
         window.draw(sprite);
     }
 
-    virtual void checkCollision(Player *player) = 0;
+    virtual void checkCollision(Player* player) override {};
 
     virtual ~Obstacles() {}
 };
@@ -142,9 +143,9 @@ public:
 
         // Spike boundaries
         float spikeLeft = x;
-        float spikeRight = x + sprite.getLocalBounds().width;
+        float spikeRight = x + 64;
         float spikeTop = y;
-        float spikeBottom = y + sprite.getLocalBounds().height;
+        float spikeBottom = y + 64;
 
         // Check for overlap
         if (charRight > spikeLeft && charLeft < spikeRight &&
@@ -165,7 +166,7 @@ public:
     Platform() {
 
         type = 'p';
-        texture.loadFromFile("Data/brick2.png");
+        texture.loadFromFile("Data/brick1.png");
         sprite.setTexture(texture);
 
     }
@@ -214,11 +215,11 @@ private:
 public:
     LevelTrigger() : triggered(false), fallSpeed(2.0f) {
         type = 't';  // Assign the type of obstacle
-        width = 128;
-        height = 45;
+        width = 64;
+        height = 64;
 
         // Load the texture
-        if (!texture.loadFromFile("Data/level_triggers.png")) {
+        if (!texture.loadFromFile("Data/ground.png")) {
             std::cerr << "Error loading level trigger texture!" << std::endl;
         }
         sprite.setTexture(texture);
@@ -255,10 +256,7 @@ public:
         }
     }
 
-    void render(RenderWindow& window, float offset) override {
-        sprite.setPosition(x - offset, y);
-        window.draw(sprite);
-    }
+    
 };
 
 
@@ -281,23 +279,23 @@ public:
     }
 
     // Factory + spawn combined
-    void spawnObstacle(char type, float x, float y, bool isBreakable = false) {
-        if (count >= MAX_OBSTACLES) return;
+    //void spawnObstacle(char type, float x, float y, bool isBreakable = false) {
+    //    if (count >= MAX_OBSTACLES) return;
 
-        Obstacles* obstacle = nullptr;
+    //    Obstacles* obstacle = nullptr;
 
-        switch (type) {
-        case 'w': obstacle = new Wall(isBreakable); break;
-        case 's': obstacle = new Spikes(); break;
-        case 'p': obstacle = new Platform(); break;
-        case 't': obstacle = new LevelTrigger(); break;
-        }
+    //    switch (type) {
+    //    case 'w': obstacle = new Wall(isBreakable); break;
+    //    case 's': obstacle = new Spikes(); break;
+    //    case 'p': obstacle = new Platform(); break;
+    //    case 't': obstacle = new LevelTrigger(); break;
+    //    }
 
-        if (obstacle) {
-            obstacle->setPosition(x, y);
-            obstacles[count++] = obstacle;
-        }
-    }
+    //    if (obstacle) {
+    //        obstacle->setPosition(x, y);
+    //        obstacles[count++] = obstacle;
+    //    }
+    //}
 
     void checkAllCollisions(Player * player) {
 
