@@ -336,9 +336,9 @@ int main()
 
         window.clear();
 
-        //EM.updateEnemies(window, enemy, enemyCount, offsetX, deltaTime.asSeconds(), activePlayer);
+        EM.updateEnemies(window, enemy, enemyCount, offsetX, deltaTime.asSeconds(), activePlayer);
 
-		OF.update(window, activePlayer, offsetX, obstacle); // displaying and u pdating obstacles
+		//OF.update(window, activePlayer, offsetX, obstacle); // displaying and u pdating obstacles
 
         factory.draw(window, directionX ,offsetX);
 
@@ -346,7 +346,7 @@ int main()
 
 
 
-		// display_level(window, height, width, lvl, wallSprite1, wallSprite2, cell_size, offsetX);
+		display_level(window, height, width, lvl, wallSprite1, wallSprite2, cell_size, offsetX);
 
 
         window.display();

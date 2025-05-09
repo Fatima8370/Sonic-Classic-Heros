@@ -475,10 +475,11 @@ public:
     bool isAttacking() {
         // CHARACTER MUST BE KNUCKLES
         return true;
+    }
     void stopJumping() {
         isJumping = false;
     }
-    }
+    
 
     float getX() { return GameEntity::position[0]; }
     float getY() { return GameEntity::position[1]; }
