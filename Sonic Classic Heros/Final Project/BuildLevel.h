@@ -1,88 +1,279 @@
-#pragma once
-#include <iostream>
-
-#include "Level.h"
-
-using namespace std;
-
-class LevelGenerator {
-public:
-    static char** generateLevel(int levelNumber) {
-        // Set dimensions based on the level number
-        int width, height;
-        if (levelNumber == 1) {
-            width = 200;
-            height = 14;
-        }
-        else if (levelNumber == 2) {
-            width = 250;
-            height = 14;
-        }
-        else if (levelNumber == 3) {
-            width = 300;
-            height = 14;
-        }
-        else if (levelNumber == 4) {  // Boss level
-            width = 30;
-            height = 14;
-        }
-
-        // Dynamically allocate the grid (2D array)
-        char** grid = new char* [height];
-        for (int i = 0; i < height; ++i) {
-            grid[i] = new char[width];
-            for (int j = 0; j < width; ++j) {
-                grid[i][j] = ' ';  // Empty space
-            }
-        }
-
-        // For non-boss levels (level 1, 2, 3)
-        if (levelNumber == 4) {  // Boss level
-            // Platforms in the middle of the screen and spikes below them
-            for (int i = 0; i < height; ++i) {
-                for (int j = 0; j < width; ++j) {
-                    if (j > 10 && j < 20) {
-                        grid[i][j] = 'p';  // Platforms in the middle
-                    }
-                    else if (i == height - 1) {
-                        grid[i][j] = 's';  // Spikes below the platform
-                    }
-                }
-            }
-        }
-        else {
-            // Randomly place obstacles for non-boss levels
-            for (int i = 0; i < height; ++i) {
-                for (int j = 0; j < width; ++j) {
-                    int randVal = rand() % 100;
-
-                    if (randVal < 3) {
-                        grid[i][j] = 'b';  // Bottomless pit (3% chance)
-                    }
-                    else if (randVal < 10) {
-                        grid[i][j] = 's';  // Spikes (10% chance)
-                    }
-                    else if (randVal < 20) {
-                        grid[i][j] = 'w';  // Wall (10% chance)
-                    }
-                    else if (randVal < 30) {
-                        grid[i][j] = 'p';  // Platform (10% chance)
-                    }
-                    else if (randVal < 35) {
-                        grid[i][j] = 't';  // Trigger (5% chance)
-                    }
-                }
-            }
-        }
-
-        return grid;
-    }
-
-    // Function to delete the grid after use
-    static void deleteGrid(char** grid, int height) {
-        for (int i = 0; i < height; ++i) {
-            delete[] grid[i];
-        }
-        delete[] grid;
-    }
-};
+//#ifndef LEVELLOADER_H
+//#define LEVELLOADER_H
+//
+//#include <iostream>
+//#include <fstream>
+//#include <string>
+//#include "Obstacles.h"
+//#include "Enemies.h"
+//
+//
+//using namespace std;
+//using namespace sf;
+//
+//class LevelLoader {
+//private:
+//    int gridHeight;
+//    int gridWidth;
+//    int currentLevel;
+//
+//    // Level data
+//    char** levelGrid;
+//    char** obstacleGrid;
+//    char** enemyGrid;
+//
+//    // Factory references
+//    ObstacleFactory* obstacleFactory;
+//    EnemyFactory* enemyFactory;
+//
+//    // Arrays to store created objects
+//    Obstacles** obstacles;
+//    Enemies** enemies;
+//
+//    // Counts
+//    int obstacleCount;
+//    int enemyCount;
+//    int collectibleCount;
+//
+//    // Initialize grid arrays
+//    void initializeGrids() {
+//        // Initialize level grid
+//        levelGrid = new char* [gridHeight];
+//        obstacleGrid = new char* [gridHeight];
+//        enemyGrid = new char* [gridHeight];
+//        collectibleGrid = new char* [gridHeight];
+//
+//        for (int i = 0; i < gridHeight; i++) {
+//            levelGrid[i] = new char[gridWidth];
+//            obstacleGrid[i] = new char[gridWidth];
+//            enemyGrid[i] = new char[gridWidth];
+//            collectibleGrid[i] = new char[gridWidth];
+//
+//            // Initialize all cells to empty
+//            for (int j = 0; j < gridWidth; j++) {
+//                levelGrid[i][j] = ' ';
+//                obstacleGrid[i][j] = '\0';
+//                enemyGrid[i][j] = '\0';
+//                collectibleGrid[i][j] = '\0';
+//            }
+//        }
+//    }
+//
+//    // Count items in grid
+//    void countGridItems() {
+//        obstacleCount = 0;
+//        enemyCount = 0;
+//        collectibleCount = 0;
+//
+//        for (int i = 0; i < gridHeight; i++) {
+//            for (int j = 0; j < gridWidth; j++) {
+//                if (obstacleGrid[i][j] != '\0') obstacleCount++;
+//                if (enemyGrid[i][j] != '\0') enemyCount++;
+//                if (collectibleGrid[i][j] != '\0') collectibleCount++;
+//            }
+//        }
+//    }
+//
+//    // Clear memory for grids
+//    void clearGrids() {
+//        if (levelGrid) {
+//            for (int i = 0; i < gridHeight; i++) {
+//                delete[] levelGrid[i];
+//                delete[] obstacleGrid[i];
+//                delete[] enemyGrid[i];
+//                delete[] collectibleGrid[i];
+//            }
+//            delete[] levelGrid;
+//            delete[] obstacleGrid;
+//            delete[] enemyGrid;
+//            delete[] collectibleGrid;
+//
+//            levelGrid = nullptr;
+//            obstacleGrid = nullptr;
+//            enemyGrid = nullptr;
+//            collectibleGrid = nullptr;
+//        }
+//    }
+//
+//public:
+//    // Constructor
+//    LevelLoader(int height, int width) :
+//        gridHeight(height),
+//        gridWidth(width),
+//        currentLevel(1),
+//        levelGrid(nullptr),
+//        obstacleGrid(nullptr),
+//        enemyGrid(nullptr),
+//        collectibleGrid(nullptr),
+//        obstacles(nullptr),
+//        enemies(nullptr),
+//        obstacleCount(0),
+//        enemyCount(0),
+//        collectibleCount(0)
+//    {
+//        initializeGrids();
+//    }
+//
+//    // Destructor
+//    ~LevelLoader() {
+//        clearGrids();
+//
+//        // Clean up object arrays
+//        if (obstacles) {
+//            delete[] obstacles;
+//            obstacles = nullptr;
+//        }
+//
+//        if (enemies) {
+//            delete[] enemies;
+//            enemies = nullptr;
+//        }
+//
+//        // The factories are not owned by this class, so we don't delete them
+//    }
+//
+//    // Load level from file
+//    bool loadLevel(int levelNum) {
+//        currentLevel = levelNum;
+//        string filename = "Data/Level/level" + to_string(levelNum) + ".csv";
+//
+//        ifstream file(filename);
+//        if (!file) {
+//            cerr << "Failed to open level file: " << filename << endl;
+//            return false;
+//        }
+//
+//        // Clear previous data
+//        clearGrids();
+//        initializeGrids();
+//
+//        // Read level data
+//        for (int i = 0; i < gridHeight; ++i) {
+//            for (int j = 0; j < gridWidth; ++j) {
+//                char ch;
+//                file.get(ch);
+//
+//                if (file.eof()) {
+//                    cerr << "Unexpected end of file while reading level." << endl;
+//                    return false;
+//                }
+//
+//                levelGrid[i][j] = ch;
+//
+//                // Categorize by type
+//                if (ch == ' ') {
+//                    continue;
+//                }
+//                else if (ch >= 'A' && ch <= 'Z') {
+//                    obstacleGrid[i][j] = ch;
+//                }
+//                else if (ch >= 'a' && ch <= 'z') {
+//                    collectibleGrid[i][j] = ch;
+//                }
+//                else if (ch >= '0' && ch <= '9') {
+//                    enemyGrid[i][j] = ch;
+//                }
+//            }
+//            file.ignore(1); // Skip newline
+//        }
+//
+//        file.close();
+//
+//        // Count items for array allocation
+//        countGridItems();
+//
+//        cout << "Level " << levelNum << " loaded with:" << endl;
+//        cout << " - " << obstacleCount << " obstacles" << endl;
+//        cout << " - " << enemyCount << " enemies" << endl;
+//        cout << " - " << collectibleCount << " collectibles" << endl;
+//
+//        return true;
+//    }
+//
+//    // Create objects from loaded level data
+//    void createLevelObjects() {
+//        // Create obstacle factory
+//        obstacleFactory = new ObstacleFactory(obstacleCount);
+//
+//        // Create enemy factory
+//        enemyFactory = new EnemyFactory(gridHeight, gridWidth, currentLevel);
+//
+//        // Allocate arrays
+//        obstacles = new Obstacles * [obstacleCount];
+//        enemies = new Enemies * [enemyCount];
+//
+//        // Create obstacles
+//        int obstacleIndex = 0;
+//        for (int i = 0; i < gridHeight; ++i) {
+//            for (int j = 0; j < gridWidth; ++j) {
+//                if (obstacleGrid[i][j] != '\0') {
+//                    obstacles[obstacleIndex] = obstacleFactory->createObstacle(
+//                        obstacleGrid[i][j],
+//                        j * 64, // Use cell size
+//                        i * 64
+//                    );
+//                    obstacleIndex++;
+//                }
+//            }
+//        }
+//
+//        // Create enemies
+//        int enemyIndex = 0;
+//        for (int i = 0; i < gridHeight; ++i) {
+//            for (int j = 0; j < gridWidth; ++j) {
+//                if (enemyGrid[i][j] != '\0') {
+//                    enemies[enemyIndex] = enemyFactory->createEnemy(
+//                        enemyGrid[i][j],
+//                        j * 64, // Use cell size
+//                        i * 64
+//                    );
+//                    enemyIndex++;
+//                }
+//            }
+//        }
+//    }
+//
+//    // Update and render level
+//    void update(RenderWindow& window, Player* player, float offsetX, float deltaTime) {
+//        // Update and render obstacles
+//        for (int i = 0; i < obstacleCount; i++) {
+//            if (obstacles[i]) {
+//                obstacles[i]->render(window, offsetX);
+//                obstacles[i]->checkCollision(player);
+//            }
+//        }
+//
+//        // Update and render enemies
+//        enemyFactory->updateEnemies(window, enemies, enemyCount, offsetX, deltaTime, player);
+//    }
+//
+//    // Get grid data
+//    char** getLevelGrid() { return levelGrid; }
+//
+//    // Get counts
+//    int getObstacleCount() const { return obstacleCount; }
+//    int getEnemyCount() const { return enemyCount; }
+//
+//    // Change level
+//    bool changeLevel(int newLevel) {
+//        // Clean up existing objects
+//        if (obstacles) {
+//            delete[] obstacles;
+//            obstacles = nullptr;
+//        }
+//
+//        if (enemies) {
+//            delete[] enemies;
+//            enemies = nullptr;
+//        }
+//
+//        // Load the new level
+//        return loadLevel(newLevel);
+//    }
+//
+//    // Get object arrays
+//    Obstacles** getObstacles() { return obstacles; }
+//    Enemies** getEnemies() { return enemies; }
+//};
+//
+//#endif // LEVELLOADER_H

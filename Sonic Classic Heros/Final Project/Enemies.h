@@ -6,6 +6,7 @@
 #include <SFML/Audio.hpp>
 #include "Hitbox.h"
 #include "Character.h"
+#include "Animations.h"
 #include <cstdlib>
 #include <ctime>
 
@@ -19,15 +20,14 @@ protected:
     bool active;
     float x, y;
     float initialX, initialY;
-    float flip;
-    bool died;
     float speed = 3.0f;
     const float area;
+    bool died;
 
     bool attack;
 
-    Texture b;
-    Sprite a;
+    Texture left;
+    Texture right;
 
     SoundBuffer sound;
     Sound dying;
@@ -35,9 +35,12 @@ protected:
     // Add a hitbox member to the Enemies class
     Hitbox hitbox;
 
+    Animation enemyL;
+    Animation enemyR;
+    Animation* currentAnimation; // Pointer to current animation
 
 public:
-    Enemies() : area(500.0f), flip(-2.0f), active(true), died(false) {
+    Enemies() : area(500.0f), active(true), died(false) {
         initialX = 1200.0f;
         initialY = 600.0f;
         x = initialX;
@@ -50,8 +53,10 @@ public:
 
         dying.setBuffer(sound);
         dying.setPlayingOffset(seconds(.4));
-        //dying.setPitch(2.0f);
         dying.setVolume(100);
+
+        // Set default animation to right (will be updated in update())
+        currentAnimation = &enemyR;
     }
 
     virtual ~Enemies() = default;
@@ -69,13 +74,15 @@ public:
     }
 
     virtual void draw(RenderWindow& window, float offset) {
-        if (!died)
-        {
-            a.setPosition(x - offset, y);
-            window.draw(a);
+        if (!died) {
+            // Update current animation position
+            if (currentAnimation) {
+                currentAnimation->setPosition(x - offset, y);
+                currentAnimation->draw(window);
+            }
 
             // Optional: Draw hitbox for debugging
-            // drawHitbox(window, offset);
+            drawHitbox(window, offset);
         }
     }
 
@@ -92,7 +99,18 @@ public:
 
     // Modified to handle all enemy types in one common method
     virtual void update(float playerX, float playerY, float deltaTime) {
-        // Base class implementation does nothing - will be overridden by specific enemy types
+        // Update animation based on direction
+        if (speed < 0) {
+            currentAnimation = &enemyL;
+        }
+        else {
+            currentAnimation = &enemyR;
+        }
+
+        // Update animation frames
+        if (currentAnimation) {
+            currentAnimation->update(deltaTime);
+        }
 
         // Update hitbox position to match enemy position
         hitbox.updateHitbox(x, y);
@@ -127,9 +145,7 @@ public:
 
     void update(float playerX, float playerY, float deltaTime) override {
         if (detectArea(playerX, playerY) && !died) {
-
             cout << "Following player at " << playerX << ", " << playerY << endl;
-
             followPlayer(playerX);
             // Note: die() will be called in the EnemyFactory::updateEnemies method
         }
@@ -139,36 +155,49 @@ public:
             y = initialY;
         }
 
+        // Update animation based on direction
+        if (speed < 0) {
+            currentAnimation = &enemyL;
+        }
+        else {
+            currentAnimation = &enemyR;
+        }
+
+        // Update animation frames
+        if (currentAnimation) {
+            currentAnimation->update(deltaTime);
+        }
+
         // Update hitbox position
         hitbox.updateHitbox(x, y);
     }
 
     void followPlayer(float playerX) {
         if (playerX > x) {
-            x += speed;
-            if (flip > 0) flip = -flip;
+            x += abs(speed);
+            speed = abs(speed); // Positive speed means moving right
         }
         else {
-            x -= speed;
-            if (flip < 0) flip = -flip;
+            x -= abs(speed);
+            speed = -abs(speed); // Negative speed means moving left
         }
-
-        a.setScale(flip, 2.0f);
-        a.setPosition(x, y);
     }
 };
 
 class BatBrain : public FollowingType {
 public:
     BatBrain() {
-        b.loadFromFile("Data/batbrainL1.png");
-        a.setTexture(b);
-        a.setScale(flip, 2.0f);
+        left.loadFromFile("Data/Enemy/batbrainL.png");
+        right.loadFromFile("Data/Enemy/batbrainR.png");
+
+        enemyL = Animation(left, 551, 64, 9, 0.1f);
+        enemyR = Animation(right, 551, 64, 9, 0.1f);
 
         // Customize hitbox for BatBrain
-        hitbox = Hitbox(x, y, 40.0f, 30.0f);
-        // Adjust offsets to match sprite dimensions
-        hitbox.setOffsets(5.0f, 25.0f, 5.0f, 35.0f);
+        hitbox = Hitbox(x, y, 64.0f, 64.0f);
+
+        // Set default animation
+        currentAnimation = &enemyR;
     }
 
     // Override the die method to use hitbox
@@ -177,7 +206,6 @@ public:
             cout << "BatBrain ded " << x << ' ' << y << "\n";
 
             x = 0; y = 0;
-            a.setPosition(x, y);
             dying.play();
             died = true;
         }
@@ -187,14 +215,17 @@ public:
 class Motobug : public FollowingType {
 public:
     Motobug() {
-        b.loadFromFile("Data/motobug.png");
-        a.setTexture(b);
-        a.setScale(flip, 2.0f);
+        left.loadFromFile("Data/Enemy/motobugL.png");
+        right.loadFromFile("Data/Enemy/motobugR.png");
+
+        enemyL = Animation(left, 444, 64, 5, 0.1f);
+        enemyR = Animation(right, 444, 64, 5, 0.1f);
 
         // Customize hitbox for Motobug (typically wider and shorter)
-        hitbox = Hitbox(x, y, 60.0f, 30.0f);
-        // Adjust offsets to match sprite dimensions
-        hitbox.setOffsets(10.0f, 30.0f, 10.0f, 50.0f);
+        hitbox = Hitbox(x, y, 91.0f, 64.0f);
+
+        // Set default animation
+        currentAnimation = &enemyR;
     }
 
     void die(const Hitbox& playerHitbox) override {
@@ -202,7 +233,6 @@ public:
             cout << "Motobug ded " << x << ' ' << y << "\n";
 
             x = 0; y = 0;
-            a.setPosition(x, y);
             dying.play();
             died = true;
         }
@@ -210,7 +240,6 @@ public:
 };
 
 class ShootingType : public Enemies {
-
 protected:
     float shootingCooldown;
     float cooldownTime;
@@ -225,18 +254,17 @@ protected:
     // Add hitbox for bullet
     Hitbox bulletHitbox;
 
-
 public:
     ShootingType()
         : isShooting(false), cooldownTime(0), shootingCooldown(5.0f) {
 
         bulletTexture.loadFromFile("Data/bullet.png");
         bulletSprite.setTexture(bulletTexture);
-        bulletSprite.setScale(2.0f, 2.0f);
+        bulletSprite.setScale(1.0f, 1.0f);
         bulletActive = false;
 
         // Initialize bullet hitbox (small size for projectile)
-        bulletHitbox = Hitbox(0, 0, 10.0f, 10.0f);
+        bulletHitbox = Hitbox(0, 0, 16.0f, 16.0f);
 
         y -= 200;
 
@@ -244,36 +272,55 @@ public:
         hitbox = Hitbox(x, y, 50.0f, 50.0f);
     }
 
-	Hitbox& getBulletHitbox() {
-		return bulletHitbox;
-	}
+    Hitbox& getBulletHitbox() {
+        return bulletHitbox;
+    }
 
     void draw(RenderWindow& window, float offset) override {
-        if (!died)
-        {
-            a.setPosition(x - offset, y);
-            window.draw(a);
+        if (!died) {
+            // Draw current animation
+            if (currentAnimation) {
+                currentAnimation->setPosition(x - offset, y);
+                currentAnimation->draw(window);
+            }
+
+            // Optional: Draw hitbox for debugging
+            drawHitbox(window, offset);
         }
 
-        if (bulletActive)
-        {
+        if (bulletActive) {
             bulletSprite.setPosition(bulletX - offset, bulletY);
             window.draw(bulletSprite);
 
             // Optional: Draw bullet hitbox for debugging
-            // drawBulletHitbox(window, offset);
+            drawBulletHitbox(window, offset);
         }
     }
 
-    
+    // Optional: Helper method to visualize bullet hitbox for debugging
+    void drawBulletHitbox(RenderWindow& window, float offset) {
+        RectangleShape bulletHitboxRect;
+        bulletHitboxRect.setPosition(bulletHitbox.getX() - offset, bulletHitbox.getY());
+        bulletHitboxRect.setSize(Vector2f(bulletHitbox.getWidth(), bulletHitbox.getHeight()));
+        bulletHitboxRect.setFillColor(Color::Transparent);
+        bulletHitboxRect.setOutlineColor(Color::Green);
+        bulletHitboxRect.setOutlineThickness(1.0f);
+        window.draw(bulletHitboxRect);
+    }
 
     void update(float playerX, float playerY, float deltaTime) override {
         if (detectArea(playerX, playerY) && !died) {
             // Movement
             float dx = playerX - x;
             if (abs(dx) > 200.0f) {
-                x += (dx > 0 ? speed : -speed);
-                flip = (dx > 0) ? -2.0f : 2.0f;
+                if (dx > 0) {
+                    x += abs(speed);
+                    speed = abs(speed); // Moving right
+                }
+                else {
+                    x -= abs(speed);
+                    speed = -abs(speed); // Moving left
+                }
             }
             else {
                 cooldownTime += deltaTime;
@@ -283,11 +330,21 @@ public:
                 }
             }
 
-            a.setScale(flip, 2.0f);
-            a.setPosition(x, y);
+            // Update animation based on direction
+            if (speed < 0) {
+                currentAnimation = &enemyL;
+            }
+            else {
+                currentAnimation = &enemyR;
+            }
         }
         else {
             cooldownTime = 0;
+        }
+
+        // Update animation frames
+        if (currentAnimation) {
+            currentAnimation->update(deltaTime);
         }
 
         // Update enemy hitbox
@@ -344,15 +401,19 @@ public:
 class BeeBot : public ShootingType {
 public:
     BeeBot() {
-        b.loadFromFile("Data/beebot.png");
-        a.setTexture(b);
-        a.setScale((flip / 2), 1.0f);
+        left.loadFromFile("Data/Enemy/beebotL.png");
+        right.loadFromFile("Data/Enemy/beebotR.png");
+
+        enemyL = Animation(left, 95, 64, 1, 0.1f);
+        enemyR = Animation(right, 95, 64, 1, 0.1f);
+
+        // Set default animation
+        currentAnimation = &enemyR;
+
         y -= 150;
 
         // Customize hitbox for BeeBot
-        hitbox = Hitbox(x, y, 40.0f, 30.0f);
-        // Adjust offsets to match sprite dimensions
-        hitbox.setOffsets(5.0f, 25.0f, 5.0f, 35.0f);
+        hitbox = Hitbox(x, y, 96.0f, 64.0f);
     }
 
     void die(const Hitbox& playerHitbox) override {
@@ -360,7 +421,6 @@ public:
             cout << "BeeBot ded " << x << ' ' << y << "\n";
 
             x = 0; y = 0;
-            a.setPosition(x, y);
             dying.play();
             died = true;
         }
@@ -370,14 +430,17 @@ public:
 class CrabMeat : public ShootingType {
 public:
     CrabMeat() {
-        b.loadFromFile("Data/crabmeat.png");
-        a.setTexture(b);
-        a.setScale(flip, 2.0f);
+        left.loadFromFile("Data/Enemy/crabmeat.png");
+        right.loadFromFile("Data/Enemy/crabmeat.png");
 
-        // Customize hitbox for CrabMeat (wider than tall)
-        hitbox = Hitbox(x, y, 60.0f, 40.0f);
-        // Adjust offsets to match sprite dimensions
-        hitbox.setOffsets(10.0f, 40.0f, 10.0f, 50.0f);
+        enemyL = Animation(left, 1020, 64, 10, 0.1f);
+        enemyR = Animation(right, 1020, 64, 10, 0.1f);
+
+        // Set default animation
+        currentAnimation = &enemyR;
+
+        // Customize hitbox for CrabMeat 
+        hitbox = Hitbox(x, y, 102.0f, 64.0f);
     }
 
     void die(const Hitbox& playerHitbox) override {
@@ -385,7 +448,6 @@ public:
             cout << "CrabMeat ded at position " << x << ' ' << y << "\n";
 
             x = 0; y = 0;
-            a.setPosition(x, y);
             dying.play();
             died = true;
         }
@@ -410,17 +472,20 @@ public:
 
         initialX = 600; initialY = 600;
 
-        b.loadFromFile("Data/eggstinger.png");
-        a.setTexture(b);
-        a.setScale(2.0f, 2.0f);  // Boss size
-        y = hoverHeight;
+        left.loadFromFile("Data/Enemy/eggstingerL.png");
+        right.loadFromFile("Data/Enemy/eggstingerR.png");
 
+        enemyL = Animation(left, 64, 64, 1, 0.1f);
+        enemyR = Animation(right, 64, 64, 1, 0.1f);
+
+        // Set default animation
+        currentAnimation = &enemyR;
+
+        y = hoverHeight;
         active = true;
 
         // Customize hitbox for EggStinger boss (larger hitbox)
-        hitbox = Hitbox(x, y, 80.0f, 80.0f);
-        // Adjust offsets to match sprite dimensions
-        hitbox.setOffsets(10.0f, 70.0f, 10.0f, 70.0f);
+        hitbox = Hitbox(x, y, 128.0f, 128.0f);
     }
 
     void update(float playerX, float playerY, float deltaTime) override {
@@ -428,9 +493,23 @@ public:
             flightTimer += deltaTime;
 
             // Hover left-to-right
-            x += speed * 2 * flip * deltaTime;
-            if (x < initialX - 600) flip = -flip;
-            else if (x > initialX + 600) flip = -flip;
+            x += speed * 2 * deltaTime;
+
+            // Change direction when reaching limits
+            if (x < initialX - 600) {
+                speed = abs(speed); // Change direction to right
+            }
+            else if (x > initialX + 600) {
+                speed = -abs(speed); // Change direction to left
+            }
+
+            // Update animation based on direction
+            if (speed < 0) {
+                currentAnimation = &enemyL;
+            }
+            else {
+                currentAnimation = &enemyR;
+            }
 
             if (!descending && !ascending && flightTimer >= attackInterval) {
                 // Start dive
@@ -456,8 +535,10 @@ public:
                 }
             }
 
-            a.setPosition(x, y);
-            a.setScale(flip, 2.0f);
+            // Update animation frames
+            if (currentAnimation) {
+                currentAnimation->update(deltaTime);
+            }
 
             // Update hitbox position
             hitbox.updateHitbox(x, y);
@@ -468,15 +549,27 @@ public:
 
     void draw(RenderWindow& window, float offset) override {
         if (!died) {
-            a.setPosition(x - offset, y);
-            window.draw(a);
+            // Draw current animation
+            if (currentAnimation) {
+                currentAnimation->setPosition(x - offset, y);
+                currentAnimation->draw(window);
+            }
+
+            // Optional: Draw hitbox for debugging
+            drawHitbox(window, offset);
+        }
+
+        if (bulletActive) {
+            bulletSprite.setPosition(bulletX - offset, bulletY);
+            window.draw(bulletSprite);
+
+            // Optional: Draw bullet hitbox for debugging
+            drawBulletHitbox(window, offset);
         }
     }
 
     void die(const Hitbox& playerHitbox) override {
         if (hitbox.checkCollision(playerHitbox)) {
-            a.setPosition(0, 0);
-
             cout << "EggStinger Neutralized\n";
             dying.play();
             died = true;
@@ -491,7 +584,6 @@ private:
     float usedX[MAX_ENEMIES];
     int count;
 
-    char** levelGrid;
     int gridHeight, gridWidth;
     int levelNum;
 
@@ -506,14 +598,28 @@ private:
         return true;
     }
 
-    Enemies* createEnemy(const string& type, float spawnX, float spawnY) {
+public:
+    EnemyFactory(int height, int width, int lvl)
+        : gridHeight(height), gridWidth(width), levelNum(lvl), count(0)
+    {
+        for (int i = 0; i < MAX_ENEMIES; ++i)
+            enemies[i] = nullptr;
+
+        cout << "In Enemy Factory\n";
+    }
+
+    ~EnemyFactory() {
+        clearEnemies();
+    }
+
+    Enemies* createEnemy(const char& type, float spawnX, float spawnY) {
         Enemies* enemy = nullptr;
 
-        if (type == "batbrain") enemy = new BatBrain();
-        else if (type == "motobug") enemy = new Motobug();
-        else if (type == "beebot") enemy = new BeeBot();
-        else if (type == "crabmeat") enemy = new CrabMeat();
-        else if (type == "eggstinger") enemy = new EggStinger();
+        if (type == '2') enemy = new BatBrain();
+        else if (type == '1') enemy = new Motobug();
+        else if (type == '3') enemy = new BeeBot();
+        else if (type == '4') enemy = new CrabMeat();
+        //else  enemy = new EggStinger();
 
         if (enemy) {
             enemy->setPosition(spawnX, spawnY);
@@ -522,170 +628,13 @@ private:
         return enemy;
     }
 
-public:
-    EnemyFactory(char** grid, int height, int width, int lvl)
-        : gridHeight(height), gridWidth(width), levelNum(lvl), count(0), levelGrid(grid)
-    {
-        for (int i = 0; i < MAX_ENEMIES; ++i)
-            enemies[i] = nullptr;
-
-        cout << "In Enemy Factory\n";
-    }
-
-    Enemies* createWithSpawn(const string& type) {
-        if (count >= MAX_ENEMIES) return nullptr;
-
-        cout << "Creating with spawn: " << type << endl;
-
-        int tries = 0;
-        const int MAX_TRIES = 100; // Increased attempts
-
-        while (tries < MAX_TRIES) {
-            int col = rand() % gridWidth;
-            int row;
-            float spawnX = static_cast<float>(col * 64);  // tile size
-            float spawnY;
-            bool validSpawn = false;
-
-            // Different spawn algorithms based on enemy type
-            if (type == "batbrain" || type == "beebot") {
-                // FLYING ENEMIES: Spawn in open air
-                // Pick a random row in the upper 2/3 of the level
-                row = rand() % (int)(gridHeight * 0.66);
-
-                // Check for an open space (no wall/spike/pit)
-                if (levelGrid[row][col] == ' ') {
-                    // For flying enemies, adjust height to be higher off the ground
-                    // Find distance to ground
-                    int groundRow = row;
-                    while (groundRow < gridHeight && levelGrid[groundRow][col] == ' ') {
-                        groundRow++;
-                    }
-
-                    // If we're at least 2 tiles from ground/ceiling, this is a good spot
-                    if (row > 1 && (groundRow - row) >= 2) {
-                        spawnY = static_cast<float>(row * 64);
-                        validSpawn = true;
-
-                        // Adjust heights for specific flying enemies
-                        if (type == "beebot") {
-                            spawnY -= 30; // Lift BeeBots higher
-                        }
-                    }
-                }
-            }
-            else if (type == "motobug" || type == "crabmeat") {
-                // GROUND ENEMIES: Find solid ground to spawn on
-
-                // Start from a random position in the lower 2/3 of the level
-                row = (int)(gridHeight * 0.33) + rand() % (int)(gridHeight * 0.66);
-
-                // Look for a platform or ground
-                if (row + 1 < gridHeight &&
-                    (levelGrid[row][col] == ' ' &&
-                        (levelGrid[row + 1][col] == 'w' || levelGrid[row + 1][col] == 'p'))) {
-
-                    // Place directly on top of the ground
-                    spawnY = static_cast<float>(row * 64);
-                    validSpawn = true;
-
-                    // Adjust for specific ground enemies
-                    if (type == "motobug") {
-                        spawnY += 10; // Place motobugs slightly lower to touch ground
-                    }
-                }
-            }
-            else if (type == "eggstinger") {
-                // BOSS: Special spawn in center-top
-                spawnX = (gridWidth / 2) * 64.0f;
-                spawnY = 150.0f;
-                validSpawn = true;
-            }
-
-            if (validSpawn && isFarFromOthers(spawnX)) {
-                Enemies* e = createEnemy(type, spawnX, spawnY);
-                if (e) {
-                    enemies[count] = e;
-                    usedX[count] = spawnX;
-                    ++count;
-                    return e;
-                }
-            }
-
-            ++tries;
-        }
-
-        cout << "Failed to spawn " << type << " after " << MAX_TRIES << " attempts." << endl;
-        return nullptr;
-    }
-
-    // More flexible enemy creation for specific patterns or manual placement
-    Enemies* createAt(const string& type, float spawnX, float spawnY) {
-        if (count >= MAX_ENEMIES) return nullptr;
-
-        if (isFarFromOthers(spawnX)) {
-            Enemies* e = createEnemy(type, spawnX, spawnY);
-            if (e) {
-                enemies[count] = e;
-                usedX[count] = spawnX;
-                ++count;
-                return e;
-            }
-        }
-        return nullptr;
-    }
-
-    // Spawn a specific number of each enemy type
-    void populateLevel() {
-        // Clear any existing enemies
-        for (int i = 0; i < count; i++) {
-            if (enemies[i]) {
-                delete enemies[i];
-                enemies[i] = nullptr;
-            }
-        }
-        count = 0;
-
-        // Spawn enemies based on level number
-        int batbrains = 3 + levelNum;
-        int motobugs = 4 + levelNum;
-        int beebots = (levelNum > 1) ? 2 + levelNum : 0; // No beebots in level 1
-        int crabmeats = (levelNum > 2) ? 2 + levelNum : 0; // No crabmeats in levels 1-2
-
-        // Boss only in certain levels
-        if (levelNum % 4 == 0) { // Every 4th level has a boss
-            createWithSpawn("eggstinger");
-        }
-
-        // Spawn regular enemies
-        for (int i = 0; i < batbrains; i++) createWithSpawn("batbrain");
-        for (int i = 0; i < motobugs; i++) createWithSpawn("motobug");
-        for (int i = 0; i < beebots; i++) createWithSpawn("beebot");
-        for (int i = 0; i < crabmeats; i++) createWithSpawn("crabmeat");
-
-        cout << "Level " << levelNum << " populated with " << count << " enemies" << endl;
-    }
-
     // Modified updateEnemies method to use player hitbox instead of coordinates
     void updateEnemies(RenderWindow& window, Enemies* enemy[], int count, float offsetX,
-        float deltaTime, Player * player)
+        float deltaTime, Player* player)
     {
-       const Hitbox playerHitbox = player->getHitbox();
+        const Hitbox playerHitbox = player->getHitbox();
 
-		bool attack = player->getIsJumping();
-
-		
-
-
-        // Only print debug info occasionally to avoid console spam
-        static int frameCounter = 0;
-        frameCounter++;
-
-        if (frameCounter % 100 == 0 && count > 0) { // Print debug every 60 frames
-            cout << "Updating " << count << " enemies. Player at ("
-                << playerHitbox.getX() << ", " << playerHitbox.getY() << ")" << endl;
-            frameCounter = 0;
-        }
+        bool attack = player->getIsJumping();
 
         for (int i = 0; i < count; i++)
         {
@@ -700,14 +649,14 @@ public:
                 // Handle attack/die logic with hitbox
                 if (attack) {
                     enemy[i]->die(playerHitbox);
-				}
-				else if (enemy[i]->isDead()) {
-					// Handle enemy death
-					cout << "Enemy " << i << " is dead!" << endl;
-					delete enemy[i];
-					enemy[i] = nullptr;
-					count--;
-				}
+                }
+                else if (enemy[i]->isDead()) {
+                    // Handle enemy death
+                    cout << "Enemy " << i << " is dead!" << endl;
+                    delete enemy[i];
+                    enemy[i] = nullptr;
+                    count--;
+                }
                 else {
                     player->takeDamage(enemy[i]->getHitbox());
                 }
@@ -719,7 +668,6 @@ public:
                         // Player is hit by bullet, handle damage here
                         cout << "Player hit by bullet!" << endl;
                         player->takeDamage(shootingEnemy->getBulletHitbox());
-                        // Add code to damage player
                     }
                 }
             }

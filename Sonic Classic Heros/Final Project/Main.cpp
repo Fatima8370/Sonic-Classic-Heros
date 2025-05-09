@@ -61,7 +61,7 @@ int main()
     wallTex2.loadFromFile("Data/brick2.png");
     wallSprite2.setTexture(wallTex2);
 
-   
+
 
     float scale_x = 2.5;
     float scale_y = 2.5;
@@ -75,8 +75,8 @@ int main()
     int hit_box_factor_x = 8 * scale_x;
     int hit_box_factor_y = 5 * scale_y;
 
-    
-   
+
+
 
     Texture bg;
     Sprite Sbg;
@@ -91,18 +91,18 @@ int main()
 
 
 
-   
+
     // TESTING OBSTACLES
 
+	generateLevel(lvl, height, width);
 
-   
 
 
     //////////////// PLAYER SHIT ////////////////////
 
-    
+
     // Create the player factory and characters
-    PlayerFactory factory;
+    PlayerFactory factory(width);
 
     // Update/initialize all players
     for (int i = 0; i < 3; i++) {
@@ -116,50 +116,153 @@ int main()
     // Main character is active player
     Player* activePlayer = factory.getActivePlayer();
 
-    ////////// PLAYER SHIT ///////////////////////
+    // ////////// PLAYER SHIT ///////////////////////
 
-    //generateLevel(lvl, 14, 200);
+    // //generateLevel(lvl, 14, 200);
 
-    const int TILE_SIZE = 64;
-    const int GRID_WIDTH = 200;
-    const int GRID_HEIGHT = 14;
-    int currentLevel = 1;
+    // const int TILE_SIZE = 64;
+    // const int GRID_WIDTH = 200;
+    // const int GRID_HEIGHT = 14;
+    // int currentLevel = 1;
 
-    
+    // 
 
-    char** grid = LevelGenerator::generateLevel(currentLevel);
+    // char** grid = LevelGenerator::generateLevel(currentLevel);
 
-    ObstacleFactory obs;
+    // ObstacleFactory obs;
 
-    Obstacles** level1;
-    
-   ////////////////////// // ENEMY SHIT//
+    // Obstacles** level1;
+    // 
+    //////////////////////// // ENEMY SHIT//
 
-    
-    EnemyFactory EM(grid, GRID_HEIGHT, GRID_WIDTH, currentLevel);
+    // 
+    // EnemyFactory EM(grid, GRID_HEIGHT, GRID_WIDTH, currentLevel);
 
-    const char* enemyTypes[] = { "batbrain", "beebot", "motobug", "crabmeat" };
-    const int numTypes = 4;
+    // const char* enemyTypes[] = { "batbrain", "beebot", "motobug", "crabmeat" };
+    // const int numTypes = 4;
 
-    Enemies* enemy[60];  
-    int count = 0;       
+    // Enemies* enemy[60];  
+    // int count = 0;       
 
-    for (int j = 0; j < numTypes; ++j) {
-        for (int i = 0; i < 5; ++i) {  // Try creating 5 of each type
-            Enemies* e = EM.createWithSpawn(enemyTypes[j]);
-            if (e) {
-                cout << "Spawned enemy of type: " << enemyTypes[j] << endl;
-                enemy[count++] = e;
+    // for (int j = 0; j < numTypes; ++j) {
+    //     for (int i = 0; i < 5; ++i) {  // Try creating 5 of each type
+    //         Enemies* e = EM.createWithSpawn(enemyTypes[j]);
+    //         if (e) {
+    //             cout << "Spawned enemy of type: " << enemyTypes[j] << endl;
+    //             enemy[count++] = e;
+    //         }
+    //     }
+    // }
+
+
+
+
+   // ENEMY SHIT ////////////////////////////////
+
+
+     ///////////////////////////////////////////////////////////////////////////////////
+
+
+
+    char position[height][width];
+
+    char obstacles[height][width] = {};
+
+    char collectibles[height][width] = {};
+
+    char enemies[height][width] = {};
+
+
+    int enemyCount = 0;
+    int collectibleCount = 0;
+    int obstacleCount = 0;
+
+
+    ifstream file("Data/Level/level1.csv");
+
+    if (!file) {
+        cerr << "Failed to open file.\n";
+        return 1;
+    }
+
+    for (int i = 0; i < height; ++i) {
+        for (int j = 0; j < width; ++j) {
+            char ch;
+            file.get(ch);
+
+            if (file.eof()) {
+                cerr << "Unexpected end of file.\n";
+                return 1;
+            }
+
+            position[i][j] = ch;
+
+            if (ch == ' ') {
+                continue; // ignore spaces
+            }
+            else if (ch >= 'A' && ch <= 'Z') {
+                obstacles[i][j] = ch;
+                obstacleCount++;
+            }
+            else if (ch >= 'a' && ch <= 'z') {
+                collectibles[i][j] = ch;
+                collectibleCount++;
+            }
+            else if (ch >= '0' && ch <= '9') {
+                enemies[i][j] = ch;
+                enemyCount++;
             }
         }
+        file.ignore(1); // skip newline
     }
 
 
+    file.close();
 
 
-  // ENEMY SHIT ////////////////////////////////
+    //CollectibleFactory CF(14, 200, 1);
 
-   
+    ObstacleFactory OF(obstacleCount);
+
+    Obstacles** obstacle;
+    obstacle = new Obstacles * [obstacleCount];
+    int count = 0;
+
+    for (int i = 0; i < height; ++i) {
+        for (int j = 0; j < width; ++j) {
+            if (obstacles[i][j] != '\0') {
+                Obstacles* o = OF.createObstacle(obstacles[i][j], j * 64, i * 64);
+                if (o) {
+                    obstacle[count++] = o;
+                    cout << "Spawned obstacle of type: " << obstacles[i][j] << endl;
+                }
+            }
+        }
+    }
+    //delete[] obstacle;
+
+
+    EnemyFactory EM(14, 200, 1);
+
+    Enemies** enemy;
+    enemy = new Enemies * [enemyCount];
+    count = 0;
+
+    for (int i = 0; i < height; ++i) {
+        for (int j = 0; j < width; ++j) {
+            if (enemies[i][j] != '\0') {
+                Enemies* e = EM.createEnemy(enemies[i][j], j * 64, i * 64);
+                if (e) {
+                    enemy[count++] = e;
+                    cout << "Spawned enemy of type: " << enemies[i][j] << endl;
+                }
+            }
+        }
+    }
+    //delete[] enemy;
+
+///////////////////////////////////////////////////////////////////////////////////
+
 
     Event ev;
     while (window.isOpen())
@@ -208,7 +311,7 @@ int main()
         }
 
         if (directionX != 0.0f) {
-            activePlayer->move(directionX);
+            activePlayer->move(directionX, width);
         }
 
 
@@ -218,30 +321,34 @@ int main()
         }
 
 
-        if (activePlayer->getX() > screen_x / 2) {
+        if (activePlayer->getX() > screen_x / 2 && 
+            activePlayer->getX() < width * 64 - screen_x / 2) 
+        {
             offsetX = activePlayer->getX() - screen_x / 2;  // Camera follows player
         }
-        else {
+        else if (activePlayer->getX() > width * 64 - screen_x / 2) {
             offsetX = 0;  // Keep the player at the left if they are close to the left edge
         }
+        else {
+			offsetX = 0;  // Keep the player at the left if they are close to the left edge
+        }
+		
 
         window.clear();
 
-       
-        
-        //window.draw(Sbg);  // Background sprite
+        //EM.updateEnemies(window, enemy, enemyCount, offsetX, deltaTime.asSeconds(), activePlayer);
 
+		OF.update(window, activePlayer, offsetX, obstacle); // displaying and u pdating obstacles
 
+        factory.draw(window, directionX ,offsetX);
 
-        factory.draw(window, offsetX);
-        
         factory.update(lvl, 64);
 
 
-       
+
+		// display_level(window, height, width, lvl, wallSprite1, wallSprite2, cell_size, offsetX);
 
 
-      
         window.display();
     }
 
@@ -263,8 +370,8 @@ void generateLevel(char** lvl, int height, int width) {
     for (int j = 0; j < width; j++)
         lvl[height - 1][j] = 'w';
 
-    // Platform parameters
-    int platformCount = (width - 20) / 10;  // adjusted for margin
+    // Platform parameters 
+    int platformCount = (width - 20) / 20;  // adjusted for margin
     int platformHeight = height - 4; // a few tiles above ground
 
     for (int p = 0; p < platformCount; p++) {
@@ -273,11 +380,11 @@ void generateLevel(char** lvl, int height, int width) {
 
         // Place 3-tile platform
         for (int i = 0; i < 3; i++)
-            lvl[y][x + i] = 'p';
+            lvl[y][x + i] = 'w';
 
-        //// Maybe place a wall on platform
-        //if (rand() % 2 == 0 && y > 0)
-        //    lvl[y - 1][x + 1] = 'w';
+        // Maybe place a wall on platform
+        if (rand() % 2 == 0 && y > 0)
+            lvl[y - 1][x + 1] = 'w';
     }
 
     // Optional: random walls on ground (but skip first and last 10 columns)
@@ -286,7 +393,7 @@ void generateLevel(char** lvl, int height, int width) {
             lvl[height - 2][i] = 'w';
     }*/
 
-   
+
 }
 
 

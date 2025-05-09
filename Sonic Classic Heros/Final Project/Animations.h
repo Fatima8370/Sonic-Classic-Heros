@@ -2,18 +2,24 @@
 #include <iostream>
 #include <SFML/Audio.hpp>
 #include <SFML/Graphics.hpp>
-
 using namespace std;
 using namespace sf;
 
 class Animation {
 public:
-    Animation(const Texture& texture, int frameWidth, int frameHeight, int totalFrames, float frameDuration)
-        : m_texture(texture), m_frameWidth(frameWidth), m_frameHeight(frameHeight),
-        m_totalFrames(totalFrames), m_frameDuration(frameDuration), m_currentFrame(0), m_elapsedTime(0)
+    Animation() = default; // Default constructor   
+
+    // Constructor now takes sheet dimensions rather than individual frame dimensions
+    Animation(const Texture& texture, int sheetWidth, int frameHeight, int totalFrames, float frameDuration)
+        : m_texture(texture), m_totalFrames(totalFrames), m_frameDuration(frameDuration),
+        m_currentFrame(0), m_elapsedTime(0)
     {
+        // Calculate individual frame width from sheet width and total frames
+        m_frameWidth = sheetWidth / totalFrames;
+        m_frameHeight = frameHeight;
+
         m_sprite.setTexture(texture);
-        m_sprite.setTextureRect(IntRect(0, 0, frameWidth, frameHeight)); // start at first frame
+        updateFrameRect(); // Set initial frame rectangle
     }
 
     void update(float deltaTime) {
@@ -21,11 +27,7 @@ public:
         if (m_elapsedTime >= m_frameDuration) {
             m_elapsedTime -= m_frameDuration;  // reset the elapsed time
             m_currentFrame = (m_currentFrame + 1) % m_totalFrames;  // move to the next frame
-
-            int frameX = (m_currentFrame * m_frameWidth) % m_texture.getSize().x;
-            int frameY = (m_currentFrame * m_frameWidth / m_texture.getSize().x) * m_frameHeight;
-
-            m_sprite.setTextureRect(IntRect(frameX, frameY, m_frameWidth, m_frameHeight));
+            updateFrameRect(); // Update the texture rectangle for the new frame
         }
     }
 
@@ -37,7 +39,22 @@ public:
         m_sprite.setPosition(x, y);
     }
 
+    // Get the current sprite to be used in the Enemies class
+    Sprite getSprite() const {
+        return m_sprite;
+    }
+
 private:
+    // Helper method to update the frame rectangle based on the current frame
+    void updateFrameRect() {
+        // Calculate frame position (assuming horizontal sprite sheet)
+        int frameX = m_currentFrame * m_frameWidth;
+        int frameY = 0; // Assume single row
+
+        // Update the sprite's texture rectangle
+        m_sprite.setTextureRect(IntRect(frameX, frameY, m_frameWidth, m_frameHeight));
+    }
+
     Sprite m_sprite;
     Texture m_texture;
     int m_frameWidth;
@@ -47,5 +64,3 @@ private:
     int m_currentFrame;
     float m_elapsedTime;
 };
-
-

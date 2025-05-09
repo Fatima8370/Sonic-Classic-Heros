@@ -13,11 +13,14 @@ using namespace std;
 
 
 
+
 class Player : public GameEntity {
 
 protected:
     static int hp;
     static int lives;
+
+
     bool isMoving;
 
 
@@ -60,7 +63,7 @@ protected:
     float scaleX, scaleY;
 
 public:
-    Player() : GameEntity(),
+    Player() : GameEntity('p'),
         isInvincible(false),
         invincibilityLimit(3.0f),
         invincibilityTimer(0.0f),
@@ -72,7 +75,7 @@ public:
 
 
         speed(0.0f),
-        jumpStrength(-20.0f),
+        jumpStrength(-25.0f),
         onGround(true),
         isJumping(false),
         isActive(false),
@@ -85,7 +88,7 @@ public:
 
 
         lastDirection(1.0f),
-        gravity(1.0f),
+        gravity(2.0f),
         terminalVelocity(20.0f),
 
 
@@ -118,21 +121,8 @@ public:
 
 
     //position getter setter
-    float* getLastPosition() { return lastPosition; }
+    bool getIsMoving() const { return isMoving; }
 
-    float* getPosition() override {
-        return GameEntity::position;  // Return base class position
-    }
-
-    void setPosition(float x, float y) override {
-        GameEntity::position[0] = x;  // Update base class position
-        GameEntity::position[1] = y;
-        lastPosition[0] = x;  // Also update last position
-        lastPosition[1] = y;
-    }
-
-    float getX() { return GameEntity::position[0]; }
-    float getY() {return GameEntity::position[1]; }
 
 
     //leader related getter setters
@@ -143,14 +133,22 @@ public:
     float getLastDirection() const { return lastDirection; }
     void setFollowDistance(float distance) { followDistance = distance; }
 
-    // Player state getters
+    // player state getters
     bool getIsInvincible() const { return isInvincible; }
     bool getIsUsingSpecialAbility() const { return isUsingSpecialAbility; }
     float getSpecialAbilityTimer() const { return specialAbilityTimer; }
     float getSpecialAbilityLimit() const { return specialAbilityLimit; }
+    bool getIsOnGround() const { return onGround; }
+    void setOnGround(bool ground) { onGround = ground; }
+    bool getIsJumping() const { return isJumping; }
 
     // Lives and HP setters/getters
     static void setLives(int newLives) { lives = newLives; }
+    static int getLives() { return lives; }
+    static int getHP() { return hp; }
+    static void setHP(int newHP) { hp = newHP; }
+
+
 
     // Character stats getters/setters
     float getSpeed() const { return speed; }
@@ -163,12 +161,18 @@ public:
     void setTerminalVelocity(float newTerminalVelocity) { terminalVelocity = newTerminalVelocity; }
 
     // Following behavior getters/setters
+    float* getLastPosition() { return lastPosition; }
     float getFollowLimit() const { return followLimit; }
     void setFollowLimit(float newFollowLimit) { followLimit = newFollowLimit; }
     float getJumpLimit() const { return jumpLimit; }
     void setJumpLimit(float newJumpLimit) { jumpLimit = newJumpLimit; }
     float getMaxFollowLimit() const { return maxFollowLimit; }
     void setMaxFollowLimit(float newMaxFollowLimit) { maxFollowLimit = newMaxFollowLimit; }
+
+    float getSpecialAbilityLimt() const { return specialAbilityLimit; }
+    void setSpecialAbilityLimit(float additionalTime) { specialAbilityLimit += additionalTime; }
+    float getInvincibilityLimit() const { return invincibilityLimit; }
+    void setInvincibilityLimit(int additionalTime) { invincibilityLimit += additionalTime; }
 
     // Hitbox dimension getters
     int getPlayerHeight() const { return playerHeight; }
@@ -180,48 +184,98 @@ public:
     void setVelocityX(float v) { velocity[0] = v; }
     void setVelocityY(float v) { velocity[1] = v; }
 
-    bool getIsOnGround() const { return onGround; }
-    void setOnGround(bool ground) { onGround = ground; }
-    bool getIsJumping() const { return isJumping; }
 
-    static int getHP() { return hp; }
-    static void setHP(int newHP) { hp = newHP; }
-
-    //htibox
-    Hitbox & getHitbox() { return hitbox; }
+    //hitbox
+    Hitbox& getHitbox() { return hitbox; }
     void updateHitbox() {
         hitbox.updateHitbox(position[0] + hitboxFactorX, position[1] + hitboxFactorY);
     }
 
 
-    //all polymorphic functions 
-    virtual void activateSpecialAbility() = 0;
-    virtual void applySpecialAbilityEffect(Event ev) {}
 
-     virtual void draw(RenderWindow& window, float direction, float offset)  {
-        playerSprite.setPosition(position[0]-offset, position[1]);
 
+
+
+
+
+
+
+
+    //overriden polymorphic functions
+
+    float* getPosition() override {
+        return GameEntity::position;
+    }
+    void setPosition(float x, float y) override {
+        GameEntity::position[0] = x;
+        GameEntity::position[1] = y;
+
+        lastPosition[0] = x;
+        lastPosition[1] = y;
+    }
+
+
+
+    virtual void draw(RenderWindow& window, float direction, float offset) override {
+
+        playerSprite.setPosition(position[0] - offset, position[1]);
+
+        //right
         if (direction < 0) {
             playerSprite.setScale(-scaleX, scaleY);
         }
+        //left
         else {
             playerSprite.setScale(scaleX, scaleY);
         }
         window.draw(playerSprite);
-     }
 
-    bool getIsMoving() const { return isMoving; }
+		//draw hitbox for debugging
+		drawHitbox(window, offset);
+    }
+
+    virtual void update(char** grid, const int cell_size) override {
+
+        applyPhysics(grid, cell_size);
+        if (onGround) {
+            isJumping = false;
+        }
+
+        if (isInvincible) {
+            invincibilityTimer -= 0.016f;
+
+            if (invincibilityTimer <= 0) {
+                isInvincible = false;
+                cout << "Player is no longer invincible." << endl;
+
+            }
+        }
+        updateHitbox();
+    }
 
 
-    virtual void move(float directionX) {
 
-        if (position[0] < 64) position[0] = 64;
+    //polymorphic functions in player class;
+    virtual void activateSpecialAbility() = 0;
 
+
+
+    virtual void applySpecialAbilityEffect(Event ev) {}
+
+
+    virtual void move(float directionX, float gridWidth) {
         isMoving = (directionX != 0);
 
         for (int i = 0; i < 2; i++) {
             lastPosition[i] = position[i];
         }
+
+		if (position[0] < 0) {
+			position[0] = 64;
+		}
+		else if (position[0] > 64 * gridWidth - playerWidth) {
+			position[0] = 64 * 200 - playerWidth;
+		}
 
         velocity[0] = speed * directionX;
         position[0] += velocity[0];
@@ -230,7 +284,6 @@ public:
 
         if (directionX != 0) { lastDirection = directionX; }
     }
-
     virtual void jump() {
         if (onGround) {
             velocity[1] = jumpStrength;
@@ -240,7 +293,102 @@ public:
     }
 
 
-    virtual void followLeader() {
+
+
+    void applyPhysics(char** grid, const int cell_size) {
+        applyGravity(grid, cell_size);
+
+        if (velocity[1] < 0) {
+            if (hitbox.checkTopCollision(grid, cell_size, 'w')) {
+
+                float collisionPoint = hitbox.getTopCollisionPoint(grid, cell_size, 'w');
+
+                if (collisionPoint > 0) {
+                    position[1] = collisionPoint;
+                    velocity[1] = 0.0f;
+                }
+            }
+        }
+        updateHitbox();
+    }
+
+
+    bool checkBottomCollision(char** grid, const int cell_size, char collisionSymbol, float& outCollisionY) {
+        float offsetY = position[1] + velocity[1];
+        int bottomLeftY = static_cast<int>((offsetY + hitboxFactorY + playerHeight) / cell_size);
+        int bottomLeftX = static_cast<int>((position[0] + hitboxFactorX) / cell_size);
+        int bottomMiddleY = static_cast<int>((offsetY + hitboxFactorY + playerHeight) / cell_size);
+        int bottomMiddleX = static_cast<int>((position[0] + hitboxFactorX + playerWidth / 2) / cell_size);
+        int bottomRightY = static_cast<int>((offsetY + hitboxFactorY + playerHeight) / cell_size);
+        int bottomRightX = static_cast<int>((position[0] + hitboxFactorX + playerWidth) / cell_size);
+
+        const int maxHeight = 14;
+        const int maxWidth = 110;
+
+        bool collision = false;
+
+        if (bottomLeftY >= 0 && bottomLeftY < maxHeight && bottomLeftX >= 0 && bottomLeftX < maxWidth) {
+            if (grid[bottomLeftY][bottomLeftX] == collisionSymbol) {
+                collision = true;
+            }
+        }
+
+        if (!collision && bottomMiddleY >= 0 && bottomMiddleY < maxHeight &&
+            bottomMiddleX >= 0 && bottomMiddleX < maxWidth) {
+            if (grid[bottomMiddleY][bottomMiddleX] == collisionSymbol) {
+                collision = true;
+            }
+        }
+
+        if (!collision && bottomRightY >= 0 && bottomRightY < maxHeight &&
+            bottomRightX >= 0 && bottomRightX < maxWidth) {
+            if (grid[bottomRightY][bottomRightX] == collisionSymbol) {
+                collision = true;
+            }
+        }
+
+        if (collision) {
+            outCollisionY = (bottomLeftY * cell_size) - playerHeight - hitboxFactorY;
+        }
+
+        return collision;
+    }
+
+    void applyGravity(char** grid, const int cell_size) {
+        // v = v0 + g
+        if (!onGround) {
+            velocity[1] += gravity;
+            if (velocity[1] >= terminalVelocity) {
+                velocity[1] = terminalVelocity;
+            }
+        }
+        else {
+            velocity[1] = 0.0f;
+        }
+
+        float offsetY = position[1] + velocity[1];
+        float collisionY = 0.0f;
+
+        bool collision = checkBottomCollision(grid, cell_size, 'w', collisionY);
+
+        if (collision) {
+            position[1] = collisionY;
+            velocity[1] = 0.0f;
+            onGround = true;
+        }
+        else {
+            position[1] = offsetY;
+            onGround = false;
+        }
+		if (position[1] > 900) { // fixed screen size
+			position[1] = 900 - 64;
+			velocity[1] = 0.0f;
+		}
+
+        updateHitbox();
+    }
+
+    virtual void followLeader(float gridWidth) {
 
         if (!isActive && leader != nullptr) {
             /*calculate leaderPosition and determined required X coordinates
@@ -265,7 +413,7 @@ public:
 
             if (directionX != 0) {
                 //follower lags a bit behind so speed is going to be just a bit slower
-                move(directionX * 0.8);
+                move(directionX * 0.8, gridWidth);
             }
 
             if (position[0] < leaderPosition[0] - maxFollowLimit) {
@@ -279,77 +427,6 @@ public:
         }
     }
 
-    void applyGravity(char** grid, const int cell_size) {
-        // v = v0 + g
-        if (!onGround) {
-            velocity[1] += gravity;
-            if (velocity[1] >= terminalVelocity) {
-                velocity[1] = terminalVelocity;
-            }
-        }
-        else {
-            velocity[1] = 0.0f;
-        }
-        float offsetY = position[1] + velocity[1];
-        int bottomLeftY = static_cast<int>((offsetY + hitboxFactorY + playerHeight) / cell_size);
-        int bottomLeftX = static_cast<int>((position[0] + hitboxFactorX) / cell_size);
-        int bottomMiddleY = static_cast<int>((offsetY + hitboxFactorY + playerHeight) / cell_size);
-        int bottomMiddleX = static_cast<int>((position[0] + hitboxFactorX + playerWidth / 2) / cell_size);
-        int bottomRightY = static_cast<int>((offsetY + hitboxFactorY + playerHeight) / cell_size);
-        int bottomRightX = static_cast<int>((position[0] + hitboxFactorX + playerWidth) / cell_size);
-        const int maxHeight = 14;
-        const int maxWidth = 110;
-
-        bool collision = false;
-        if (bottomLeftY >= 0 && bottomLeftY < maxHeight && bottomLeftX >= 0 && bottomLeftX < maxWidth) {
-            if (grid[bottomLeftY][bottomLeftX] == 'w') {
-                collision = true;
-            }
-        }
-        if (!collision && bottomMiddleY >= 0 && bottomMiddleY < maxHeight &&
-            bottomMiddleX >= 0 && bottomMiddleX < maxWidth) {
-            if (grid[bottomMiddleY][bottomMiddleX] == 'w') {
-                collision = true;
-            }
-        }
-        if (!collision && bottomRightY >= 0 && bottomRightY < maxHeight &&
-            bottomRightX >= 0 && bottomRightX < maxWidth) {
-            if (grid[bottomRightY][bottomRightX] == 'w') {
-                collision = true;
-            }
-        }
-        if (collision) {
-            position[1] = (bottomLeftY * cell_size) - playerHeight - hitboxFactorY;
-            velocity[1] = 0.0f;
-            onGround = true;
-        }
-        else {
-            position[1] = offsetY;
-            onGround = false;
-        }
-        updateHitbox();
-    }
-
-
-
-    void update(char** grid, const int cell_size) override {
-        applyGravity(grid, cell_size);
-        if (onGround) {
-            isJumping = false;
-        }
-
-        if (isInvincible) {
-            invincibilityTimer -= 0.016f;
-
-            if (invincibilityTimer <= 0) {
-                isInvincible = false;
-                cout << "Player is no longer invincible." << endl;
-
-            }
-        }
-        updateHitbox();
-    }
-
 
     void takeDamage(const Hitbox& other) {
 
@@ -359,8 +436,8 @@ public:
             invincibilityTimer = invincibilityLimit;
             hp -= 10;
 
-			cout << "Player took damage! HP: " << hp << endl;
-			cout << "Player is now invincible for " << invincibilityLimit << " seconds." << endl;
+            cout << "Player took damage! HP: " << hp << endl;
+            cout << "Player is now invincible for " << invincibilityLimit << " seconds." << endl;
 
         }
         if (hp <= 0) {
@@ -376,23 +453,45 @@ public:
         }
     }
 
-    static int getLives() { return lives; }
 
-	void stopFalling() {
-		
-		velocity[1] = 0.0f;
-		isJumping = false;
-		
-	}
 
-	void stopJumping() {
-		isJumping = false;
-	}
 
-	bool isAttacking() {
+
+    //////////////////////////////////////////
+    /////////////// My additions /////////////
+    //////////////////////////////////////////
+
+    void setInvincible(bool invincible) { isInvincible = invincible; }
+
+
+    void stopFalling() {
+
+        velocity[1] = 0.0f;
+        isJumping = false;
+
+    }
+
+
+    bool isAttacking() {
         // CHARACTER MUST BE KNUCKLES
-		return true;
-	}
+        return true;
+    void stopJumping() {
+        isJumping = false;
+    }
+    }
+
+    float getX() { return GameEntity::position[0]; }
+    float getY() { return GameEntity::position[1]; }
+
+    void drawHitbox(RenderWindow& window, float offset) {
+        RectangleShape hitboxRect;
+        hitboxRect.setPosition(hitbox.getX() - offset, hitbox.getY());
+        hitboxRect.setSize(Vector2f(hitbox.getWidth(), hitbox.getHeight()));
+        hitboxRect.setFillColor(Color::Transparent);
+        hitboxRect.setOutlineColor(Color::Red);
+        hitboxRect.setOutlineThickness(1.0f);
+        window.draw(hitboxRect);
+    }
 
 }; int Player::hp = 100, Player::lives = 3;
 
@@ -411,7 +510,6 @@ public:
 
         //followDistance = 60.0f;
 
-
         playerHeight = (static_cast<int>(35 * scaleX));
         playerWidth = (static_cast<int>(24 * scaleY));
 
@@ -422,7 +520,7 @@ public:
         specialAbilityTimer = 0.0f;
 
 
-        playerTexture.loadFromFile("Data/tails.png");
+        playerTexture.loadFromFile("Sprites/tails/tails.png");
         playerSprite.setTexture(playerTexture);
         playerSprite.setScale(scaleX, scaleY);
     }
@@ -437,51 +535,67 @@ public:
     }
 
     void applySpecialAbilityEffect(Event ev) override {
+
         if (ev.type == Event::KeyPressed && ev.key.code == Keyboard::X) {
             if (isUsingSpecialAbility) {
-                velocity[1] = -8.0f;
+                velocity[1] = -10.0f;
             }
         }
 
 
     }
-    void update(char** grid, const int cell_size) override {
 
+
+    void update(char** grid, const int cell_size) override {
         if (isUsingSpecialAbility) {
 
+
+
+            if (hitbox.checkTopCollision(grid, cell_size, 'w')) {
+                float collisionPoint = hitbox.getTopCollisionPoint(grid, cell_size, 'w');
+                if (collisionPoint > 0) {
+                    position[1] = collisionPoint;
+                    velocity[1] = 0.0f;
+                }
+            }
+
             specialAbilityTimer -= 0.016f;
+            velocity[1] += gravity * 0.2f;
 
-            velocity[1] += gravity * 0.5f;
-
-            //same logic as terminal velocity
             if (velocity[1] > 5.0f) {
                 velocity[1] = 5.0f;
             }
 
-            position[1] += velocity[1];
+            float offsetY = position[1] + velocity[1];
+
+            float collisionY = 0.0f;
+            bool collision = checkBottomCollision(grid, cell_size, 'w', collisionY);
+
+            if (collision && velocity[1] > 0) {
+                position[1] = collisionY;
+                velocity[1] = 0.0f;
+                onGround = true;
+                isUsingSpecialAbility = false;
+                cout << "Tails landed on ground and stopped flying." << endl;
+            }
+            else {
+                position[1] = offsetY;
+                onGround = false;
+            }
 
             if (specialAbilityTimer <= 0) {
                 isUsingSpecialAbility = false;
                 cout << "Tails flying ended" << endl;
-
             }
-            updateHitbox();
 
+            updateHitbox();
         }
         else {
             Player::update(grid, cell_size);
-
         }
-
     }
 
 };
-
-
-
-
-
-
 
 
 class Sonic : public Player {
@@ -509,7 +623,7 @@ public:
 
         stillRightTexture.loadFromFile("Sprites/sonic/sonic_right_still.png");
         walkRightTexture.loadFromFile("Sprites/sonic/sonic_walk_right.png");
-        stillLeftTexture.loadFromFile("Data/sonic.png");
+        stillLeftTexture.loadFromFile("Sprites/sonic/sonic_left_still.png");
         walkLeftTexture.loadFromFile("Sprites/sonic/sonic_walk_left.png");
 
         // Start with the right-facing still texture
@@ -533,9 +647,9 @@ public:
     }
 
 
-    virtual void draw (RenderWindow& window, float direction, float offset) override {
+    void draw(RenderWindow& window, float direction, float offset) override {
         // Select the appropriate texture based on movement and direction
-        if (direction < 0) { // Left direction
+        if (direction < 0) {
             if (isMoving) {
                 playerSprite.setTexture(walkLeftTexture);
             }
@@ -543,7 +657,7 @@ public:
                 playerSprite.setTexture(stillLeftTexture);
             }
         }
-        else { // Right direction
+        else {
             if (isMoving) {
                 playerSprite.setTexture(walkRightTexture);
             }
@@ -552,33 +666,25 @@ public:
             }
         }
 
-        // No need to flip the sprite since we're using direction-specific textures
         playerSprite.setScale(scaleX, scaleY);
 
-        // Set position and draw
-        playerSprite.setPosition(position[0]-offset, position[1]);
+        playerSprite.setPosition(position[0] - offset, position[1]);
         window.draw(playerSprite);
+
+		// Draw hitbox for debugging
+		drawHitbox(window, offset);
     }
 
     void update(char** grid, const int cell_size) override {
-
-
+        Player::update(grid, cell_size);
 
         if (isUsingSpecialAbility) {
-
             specialAbilityTimer -= 0.016f;
-
             if (specialAbilityTimer <= 0) {
                 isUsingSpecialAbility = false;
-
                 speed = normalSpeed;
                 cout << "Sonic's speedies ended" << endl;
-
             }
-            updateHitbox();
-        }
-        else {
-            Player::update(grid, cell_size);
         }
     }
 
@@ -636,16 +742,16 @@ public:
 
 
 class PlayerFactory {
-
 private:
     const int NUM_PLAYERS = 3;
     Player* players[3];
     int activePlayerIndex;
 
+    float gridWidth;
 
 public:
 
-    PlayerFactory() : activePlayerIndex(0) {
+    PlayerFactory(float w) : activePlayerIndex(0), gridWidth(w) {
         for (int i = 0; i < NUM_PLAYERS; i++) {
             players[i] = nullptr;
         }
@@ -653,7 +759,7 @@ public:
         createAllPlayers();
     }
 
-    virtual ~PlayerFactory() {
+    ~PlayerFactory() {
         for (int i = 0; i < NUM_PLAYERS; i++) {
             cout << "PlayerFactory destructor called" << endl;
             delete players[i];
@@ -738,14 +844,14 @@ public:
     }
 
 
-    void draw(RenderWindow& window, float offset) const {
+    void draw(RenderWindow& window, float direction, float offset )  const {
 
         for (int i = 0; i < NUM_PLAYERS; i++) {
             if (i != activePlayerIndex) {
                 players[i]->draw(window, players[i]->getLastDirection(), offset);
             }
         }
-        players[activePlayerIndex]->draw(window, players[activePlayerIndex]->getLastDirection(),offset);
+        players[activePlayerIndex]->draw(window, players[activePlayerIndex]->getLastDirection(), offset);
     }
 
     void update(char** grid, const int cell_size) const {
@@ -754,14 +860,13 @@ public:
         // First, handle active player movement
         Player* activePlayer = players[activePlayerIndex];
 
-        
-
+       
         activePlayer->update(grid, cell_size);
 
         // Update followers
         for (int i = 0; i < NUM_PLAYERS; i++) {
             if (i != activePlayerIndex) {
-                players[i]->followLeader();
+                players[i]->followLeader(gridWidth);
                 players[i]->update(grid, cell_size);
             }
         }

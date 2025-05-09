@@ -25,12 +25,14 @@ all used using hitbox
 */
 
 // Base class for all obstacles
-class Obstacles : public GameEntity {
+class Obstacles {
 protected:
     char type;
     Sprite sprite;
     Texture texture;
     float x, y;
+
+    bool isColliding;
 
 public:
     virtual void setPosition(float xPos, float yPos) {
@@ -39,12 +41,16 @@ public:
         sprite.setPosition(x, y);
     }
 
-    void render(RenderWindow& window, float offset) override {
+   virtual void render(RenderWindow& window, float offset)  {
         sprite.setPosition(x - offset, y);  // Apply offset for scrolling
         window.draw(sprite);
     }
 
-    virtual void checkCollision(Player* player) override {};
+    virtual void checkCollision(Player* player)  {};
+
+	bool isCollidingWithPlayer() const {
+        return isColliding;
+	}
 
     virtual ~Obstacles() {}
 };
@@ -55,15 +61,22 @@ class Wall : public Obstacles {
 
 public:
     Wall(bool isBreakable = false) {
-        type = 'w';
+        type = 'W';
         breakable = isBreakable;
         if (breakable)
+        {
+            type = 'B';
             texture.loadFromFile("Data/breakable_wall.png");
+        }
         else
             texture.loadFromFile("Data/brick2.png");
 
         sprite.setTexture(texture);
     }
+
+	bool isBreakable() const {
+		return breakable;
+	}
 
     void checkCollision(Player* player) override {
 
@@ -83,6 +96,8 @@ public:
         // Check for overlap
         if (charRight > wallLeft && charLeft < wallRight &&
             charBottom > wallTop && charTop < wallBottom) {
+
+			isColliding = true; // Set collision flag
 
             // Calculate overlap amounts
             float overlapLeft = charRight - wallLeft;
@@ -151,6 +166,7 @@ public:
         if (charRight > spikeLeft && charLeft < spikeRight &&
             charBottom > spikeTop && charTop < spikeBottom) {
             // Player touched spikes - apply damage
+			isColliding = true; // Set collision flag
             player->takeDamage(10); // Assuming you have a takeDamage method
         }
     }
@@ -165,7 +181,7 @@ private:
 public:
     Platform() {
 
-        type = 'p';
+        type = 'P';
         texture.loadFromFile("Data/brick1.png");
         sprite.setTexture(texture);
 
@@ -198,6 +214,7 @@ public:
             charRight > platformLeft && charLeft < platformRight &&
             charBottom >= platformTop && charBottom <= platformTop + 10) {
             // Character landed on platform
+			isColliding = true; // Set collision flag
             player->setPosition(charLeft, platformTop - hitbox.getHeight());
             player->stopFalling();
         }
@@ -214,7 +231,7 @@ private:
 
 public:
     LevelTrigger() : triggered(false), fallSpeed(2.0f) {
-        type = 't';  // Assign the type of obstacle
+        type = 'T';  // Assign the type of obstacle
         width = 64;
         height = 64;
 
@@ -242,19 +259,23 @@ public:
 
         if (charRight > triggerLeft && charLeft < triggerRight &&
             charBottom > triggerTop && charTop < triggerBottom) {
+
+			isColliding = true; // Set collision flag
+
             if (!triggered) {
                 triggered = true;
                 std::cout << "Level Trigger Activated!" << std::endl;
+                if (triggered) {
+                    // Move the trigger off-screen
+                    sprite.move(0, fallSpeed);
+                }
             }
         }
     }
 
-    void update() {
-        if (triggered) {
-            // Move the trigger off-screen
-            sprite.move(0, fallSpeed);
-        }
-    }
+	bool isTriggered() const {
+		return triggered;
+	}
 
     
 };
@@ -267,37 +288,33 @@ private:
     int count;
 
 public:
-    ObstacleFactory() {
-        count = 0;
-        for (int i = 0; i < MAX_OBSTACLES; ++i)
-            obstacles[i] = nullptr;
+    ObstacleFactory(int count) {
+        this->count = count;
     }
 
     ~ObstacleFactory() {
-        for (int i = 0; i < count; ++i)
-            delete obstacles[i];
+        count = 0;
     }
 
-    // Factory + spawn combined
-    //void spawnObstacle(char type, float x, float y, bool isBreakable = false) {
-    //    if (count >= MAX_OBSTACLES) return;
+    //Factory + spawn combined
+    Obstacles* createObstacle(char type, float x, float y) {
 
-    //    Obstacles* obstacle = nullptr;
+        Obstacles* obstacle = nullptr;
 
-    //    switch (type) {
-    //    case 'w': obstacle = new Wall(isBreakable); break;
-    //    case 's': obstacle = new Spikes(); break;
-    //    case 'p': obstacle = new Platform(); break;
-    //    case 't': obstacle = new LevelTrigger(); break;
-    //    }
+        switch (type) {
+        case 'W': obstacle = new Wall(); break;
+        case 'S': obstacle = new Spikes(); break;
+        case 'P': obstacle = new Platform(); break;
+        case 'T': obstacle = new LevelTrigger(); break;
+        case 'B': obstacle = new Wall(true); break;
 
-    //    if (obstacle) {
-    //        obstacle->setPosition(x, y);
-    //        obstacles[count++] = obstacle;
-    //    }
-    //}
+        }
+        obstacle->setPosition(x, y);
 
-    void checkAllCollisions(Player * player) {
+        return obstacle;
+    }
+
+    void checkAllCollisions(Player* player) {
 
         for (int i = 0; i < count; ++i) {
             if (obstacles[i])
@@ -305,34 +322,23 @@ public:
         }
     }
 
-    void renderAll(sf::RenderWindow& window, float offset) {
+    void renderAll(RenderWindow& window, float offset) {
         for (int i = 0; i < count; ++i) {
             if (obstacles[i])
                 obstacles[i]->render(window, offset);
         }
     }
 
-    void updateAll() {
+    void update(RenderWindow& window, Player* player, float offset, Obstacles* obstacles[]) {
+
         for (int i = 0; i < count; ++i) {
-            if (LevelTrigger* t = dynamic_cast<LevelTrigger*>(obstacles[i])) {
-                t->update();
+            if (obstacles[i]) {
+                obstacles[i]->render(window, offset);
+                obstacles[i]->checkCollision(player);
             }
         }
-    }
-
-    void update(RenderWindow& window, Player* player, float offset) {
-
-
-		for (int i = 0; i < count; ++i) {
-			if (obstacles[i]) {
-				obstacles[i]->render(window, offset);
-				obstacles[i]->checkCollision(player);
-			}
-		}
-
 
     }
-
 
     Obstacles** getAllObstacles() {
         return obstacles;
@@ -342,4 +348,3 @@ public:
         return count;
     }
 };
-
