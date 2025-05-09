@@ -18,8 +18,8 @@
 using namespace sf;
 using namespace std;
 
-float screen_x = 1200;
-float screen_y = 900;
+float screen_x = 1280;
+float screen_y = 896;
 
 // prototypes 
 
@@ -48,8 +48,8 @@ int main()
     Sprite wallSprite2;
 
     // Initialize level
-    lvl = new char* [height];
-    for (int i = 0; i < height; i += 1)
+    lvl = new char* [height+1];
+    for (int i = 0; i <= height; i += 1)
     {
         lvl[i] = new char[width] {'\0'};
     }
@@ -81,7 +81,7 @@ int main()
     Texture bg;
     Sprite Sbg;
 
-    bg.loadFromFile("Data/background25.png");
+    bg.loadFromFile("Data/BG.png");
     Sbg.setTexture(bg);
 
     Clock clock;
@@ -336,6 +336,8 @@ int main()
 
         window.clear();
 
+		window.draw(Sbg);
+
         EM.updateEnemies(window, enemy, enemyCount, offsetX, deltaTime.asSeconds(), activePlayer);
 
 		//OF.update(window, activePlayer, offsetX, obstacle); // displaying and u pdating obstacles
@@ -369,9 +371,11 @@ void generateLevel(char** lvl, int height, int width) {
     // Ground — fill entire bottom row
     for (int j = 0; j < width; j++)
         lvl[height - 1][j] = 'w';
+    for (int j = 0; j < width; j++)
+        lvl[height][j] = 'w';
 
     // Platform parameters 
-    int platformCount = (width - 20) / 20;  // adjusted for margin
+    int platformCount = (width - 20) / 10;  // adjusted for margin
     int platformHeight = height - 4; // a few tiles above ground
 
     for (int p = 0; p < platformCount; p++) {
@@ -386,13 +390,6 @@ void generateLevel(char** lvl, int height, int width) {
         if (rand() % 2 == 0 && y > 0)
             lvl[y - 1][x + 1] = 'w';
     }
-
-    // Optional: random walls on ground (but skip first and last 10 columns)
-   /* for (int i = 8; i < width - 10; i += 7) {
-        if (rand() % 2 == 0)
-            lvl[height - 2][i] = 'w';
-    }*/
-
 
 }
 

@@ -5,14 +5,14 @@
 #include <SFML/Window.hpp>
 
 #include "Hitbox.h"
+#include "Animations.h"
 #include "GameEntity.h"
 
 
 using namespace sf;
 using namespace std;
 
-
-
+// Base class for all characters in the game
 
 class Player : public GameEntity {
 
@@ -20,9 +20,7 @@ protected:
     static int hp;
     static int lives;
 
-
     bool isMoving;
-
 
     float velocity[2];
     float speed;
@@ -47,7 +45,6 @@ protected:
     int playerWidth;
     Hitbox hitbox;
 
-
     bool isUsingSpecialAbility;
     float specialAbilityTimer;
     float specialAbilityLimit;
@@ -57,73 +54,72 @@ protected:
     float invincibilityLimit;
     float invincibilityTimer;
 
+    // Animations
+    Animation idleLeftAnim;
+    Animation idleRightAnim;
+    Animation walkLeftAnim;
+    Animation walkRightAnim;
+    Animation jumpLeftAnim;
+    Animation jumpRightAnim;
+    Animation specialLeftAnim;
+    Animation specialRightAnim;
+    Animation* currentAnimation; // pointer to current animation
 
-    Texture playerTexture;
-    Sprite playerSprite;
-    float scaleX, scaleY;
+    // Textures for different states
+    Texture idleLeftTexture;
+    Texture idleRightTexture;
+    Texture walkLeftTexture;
+    Texture walkRightTexture;
+    Texture jumpLeftTexture;
+    Texture jumpRightTexture;
+    Texture specialLeftTexture;
+    Texture specialRightTexture;
+
+    // Sound
+    SoundBuffer jumpSoundBuffer;
+    SoundBuffer damageSoundBuffer;
+    SoundBuffer specialSoundBuffer;
+    Sound jumpSound;
+    Sound damageSound;
+    Sound specialSound;
 
 public:
     Player() : GameEntity('p'),
         isInvincible(false),
         invincibilityLimit(3.0f),
         invincibilityTimer(0.0f),
-
-        scaleX(2.5f),
-        scaleY(2.5f),
-
         isMoving(false),
-
-
         speed(0.0f),
         jumpStrength(-25.0f),
         onGround(true),
         isJumping(false),
         isActive(false),
         leader(nullptr),
-
         followDistance(60.0f),
         followLimit(5.0f),
         jumpLimit(5.0f),
         maxFollowLimit(100.0f),
-
-
         lastDirection(1.0f),
         gravity(2.0f),
         terminalVelocity(20.0f),
-
-
-        hitboxFactorX(static_cast<int>(8 * 2.5f)),
-        hitboxFactorY(static_cast<int>(5 * 2.5f)),
-        playerHeight(static_cast<int>(35 * 2.5f)),
-        playerWidth(static_cast<int>(24 * 2.5f)),
-
-
+        hitboxFactorX(static_cast<int>(8)),
+        hitboxFactorY(static_cast<int>(5)),
         isUsingSpecialAbility(false),
         specialAbilityTimer(0.0f),
         specialAbilityLimit(0.0f)
     {
-
         for (int i = 0; i < 2; i++) {
             lastPosition[i] = position[i];
             velocity[i] = 0.0f;
         }
-
-        hitbox = Hitbox(position[0] + hitboxFactorX, position[1] + hitboxFactorY, playerWidth - 2 * hitboxFactorX, playerHeight - 2 * hitboxFactorY);
     }
-
-
-
 
     virtual ~Player() {
         leader = nullptr;
     }
 
-
-
     //position getter setter
     bool getIsMoving() const { return isMoving; }
-
-
 
     //leader related getter setters
     void setLeader(Player* lead) { if (lead != this) this->leader = lead; }
@@ -147,8 +143,6 @@ public:
     static int getLives() { return lives; }
     static int getHP() { return hp; }
     static void setHP(int newHP) { hp = newHP; }
-
-
 
     // Character stats getters/setters
     float getSpeed() const { return speed; }
@@ -184,28 +178,17 @@ public:
     void setVelocityX(float v) { velocity[0] = v; }
     void setVelocityY(float v) { velocity[1] = v; }
 
-
     //hitbox
     Hitbox& getHitbox() { return hitbox; }
     void updateHitbox() {
         hitbox.updateHitbox(position[0] + hitboxFactorX, position[1] + hitboxFactorY);
     }
 
-
-
-
-
-
-
-
-
-
-
     //overriden polymorphic functions
-
     float* getPosition() override {
         return GameEntity::position;
     }
+
     void setPosition(float x, float y) override {
         GameEntity::position[0] = x;
         GameEntity::position[1] = y;
@@ -214,28 +197,49 @@ public:
         lastPosition[1] = y;
     }
 
+    // Update animation state based on player state
+    void updateAnimation(float deltaTime) {
+        // Select the appropriate animation based on state and direction
+        Animation* newAnimation = nullptr;
 
+        if (isUsingSpecialAbility) {
+            newAnimation = (lastDirection >= 0) ? &specialRightAnim : &specialLeftAnim;
+        }
+        else if (isJumping || !onGround) {
+            newAnimation = (lastDirection >= 0) ? &jumpRightAnim : &jumpLeftAnim;
+        }
+        else if (isMoving) {
+            newAnimation = (lastDirection >= 0) ? &walkRightAnim : &walkLeftAnim;
+        }
+        if (velocity[0] == 0) {
+            newAnimation = (lastDirection >= 0) ? &idleRightAnim : &idleLeftAnim;
+        }
+
+        // Only change animation if needed
+        if (newAnimation != currentAnimation) {
+            currentAnimation = newAnimation;
+        }
+
+        // Update the current animation
+        if (currentAnimation) {
+            currentAnimation->update(deltaTime);
+        }
+    }
 
     virtual void draw(RenderWindow& window, float direction, float offset) override {
+        if (currentAnimation) {
+            // Update position for the animation sprite
+            currentAnimation->setPosition(position[0] - offset, position[1]);
 
-        playerSprite.setPosition(position[0] - offset, position[1]);
-
-        //right
-        if (direction < 0) {
-            playerSprite.setScale(-scaleX, scaleY);
+            // Draw the current animation
+            currentAnimation->draw(window);
         }
-        //left
-        else {
-            playerSprite.setScale(scaleX, scaleY);
-        }
-        window.draw(playerSprite);
 
-		//draw hitbox for debugging
-		drawHitbox(window, offset);
+        // Draw hitbox for debugging
+        drawHitbox(window, offset);
     }
 
     virtual void update(char** grid, const int cell_size) override {
-
         applyPhysics(grid, cell_size);
         if (onGround) {
             isJumping = false;
@@ -247,21 +251,18 @@ public:
             if (invincibilityTimer <= 0) {
                 isInvincible = false;
                 cout << "Player is no longer invincible." << endl;
-
             }
         }
+
+        // Update animations with a fixed delta time
+        updateAnimation(0.016f); // 60 FPS equivalent
         updateHitbox();
     }
-
-
 
     //polymorphic functions in player class;
     virtual void activateSpecialAbility() = 0;
 
-
-
     virtual void applySpecialAbilityEffect(Event ev) {}
-
 
     virtual void move(float directionX, float gridWidth) {
         isMoving = (directionX != 0);
@@ -270,12 +271,12 @@ public:
             lastPosition[i] = position[i];
         }
 
-		if (position[0] < 0) {
-			position[0] = 64;
-		}
-		else if (position[0] > 64 * gridWidth - playerWidth) {
-			position[0] = 64 * 200 - playerWidth;
-		}
+		if (position[0] < 0) { // fixed screen size
+            position[0] = 64;
+        }
+        else if (position[0] > 64 * (gridWidth - 2)) {
+            position[0] = 64 * (gridWidth - 2);
+        }
 
         velocity[0] = speed * directionX;
         position[0] += velocity[0];
@@ -284,23 +285,25 @@ public:
 
         if (directionX != 0) { lastDirection = directionX; }
     }
+
     virtual void jump() {
         if (onGround) {
             velocity[1] = jumpStrength;
             isJumping = true;
             onGround = false;
+
+            // Play jump sound if available
+            if (jumpSound.getBuffer() != nullptr) {
+                jumpSound.play();
+            }
         }
     }
-
-
-
 
     void applyPhysics(char** grid, const int cell_size) {
         applyGravity(grid, cell_size);
 
         if (velocity[1] < 0) {
             if (hitbox.checkTopCollision(grid, cell_size, 'w')) {
-
                 float collisionPoint = hitbox.getTopCollisionPoint(grid, cell_size, 'w');
 
                 if (collisionPoint > 0) {
@@ -311,7 +314,6 @@ public:
         }
         updateHitbox();
     }
-
 
     bool checkBottomCollision(char** grid, const int cell_size, char collisionSymbol, float& outCollisionY) {
         float offsetY = position[1] + velocity[1];
@@ -380,23 +382,23 @@ public:
             position[1] = offsetY;
             onGround = false;
         }
-		if (position[1] > 900) { // fixed screen size
-			position[1] = 900 - 64;
-			velocity[1] = 0.0f;
-		}
+
+        if (position[1] > 900) { // fixed screen size
+            position[1] = 900 - 64;
+            velocity[1] = 0.0f;
+            onGround = true;
+        }
 
         updateHitbox();
     }
 
     virtual void followLeader(float gridWidth) {
-
         if (!isActive && leader != nullptr) {
             /*calculate leaderPosition and determined required X coordinates
             * check where follower is wrt to required X coordinates
             * if followLimit is exceeded that means either too far left/ far right
             then we determine whether the follower should move left/right
             -followLimit <= followerPosition <= followLinit*/
-
 
             float* leaderPosition = leader->getPosition();
             float requiredX = leaderPosition[0] - followDistance;
@@ -427,11 +429,8 @@ public:
         }
     }
 
-
     void takeDamage(const Hitbox& other) {
-
         if (!isInvincible && (hitbox.checkCollision(other))) {
-
             isInvincible = true;
             invincibilityTimer = invincibilityLimit;
             hp -= 10;
@@ -439,7 +438,12 @@ public:
             cout << "Player took damage! HP: " << hp << endl;
             cout << "Player is now invincible for " << invincibilityLimit << " seconds." << endl;
 
+            // Play damage sound if available
+            if (damageSound.getBuffer() != nullptr) {
+                damageSound.play();
+            }
         }
+
         if (hp <= 0) {
             lives--;
             hp = 100;
@@ -453,33 +457,25 @@ public:
         }
     }
 
-
-
-
-
     //////////////////////////////////////////
     /////////////// My additions /////////////
     //////////////////////////////////////////
 
     void setInvincible(bool invincible) { isInvincible = invincible; }
 
-
     void stopFalling() {
-
         velocity[1] = 0.0f;
         isJumping = false;
-
     }
-
 
     bool isAttacking() {
         // CHARACTER MUST BE KNUCKLES
-        return true;
+        return isUsingSpecialAbility;
     }
+
     void stopJumping() {
         isJumping = false;
     }
-    
 
     float getX() { return GameEntity::position[0]; }
     float getY() { return GameEntity::position[1]; }
@@ -493,65 +489,76 @@ public:
         hitboxRect.setOutlineThickness(1.0f);
         window.draw(hitboxRect);
     }
+};
 
-}; int Player::hp = 100, Player::lives = 3;
+int Player::hp = 100, Player::lives = 3;
 
-
-
-
-
+// Tails class implementation
 class Tails : public Player {
-private:
-
-
 public:
     Tails() {
-        scaleX = 3.2;
-        scaleY = 3.2;
+        idleRightTexture.loadFromFile("Data/Player/tailsR.png");
+        idleLeftTexture.loadFromFile("Data/Player/tailsL.png");
+        walkRightTexture.loadFromFile("Data/Player/Tails_Walk.png");
+        walkLeftTexture.loadFromFile("Data/Player/Tails_WalkL.png");
+        jumpRightTexture.loadFromFile("Data/Player/Tails_jump.png");
+        jumpLeftTexture.loadFromFile("Data/Player/Tails_jumpL.png");
+        specialRightTexture.loadFromFile("Data/Player/tails_SAR.png");
+        specialLeftTexture.loadFromFile("Data/Player/tails_SAL.png");
 
-        //followDistance = 60.0f;
+        // Configure the sound effects
+        jumpSoundBuffer.loadFromFile("Data/Sound/tails_jump.wav");
+        jumpSound.setBuffer(jumpSoundBuffer);
 
-        playerHeight = (static_cast<int>(35 * scaleX));
-        playerWidth = (static_cast<int>(24 * scaleY));
+        specialSoundBuffer.loadFromFile("Data/Sound/tails_fly.wav");
+        specialSound.setBuffer(specialSoundBuffer);
 
+        idleLeftAnim = Animation(idleLeftTexture, 31, 46, 1, 0.1f);
+        idleRightAnim = Animation(idleRightTexture, 31, 46, 1, 0.1f);
+
+        walkLeftAnim = Animation(walkLeftTexture, 578, 46, 10, 0.1f);
+        walkRightAnim = Animation(walkRightTexture, 578, 46, 10, 0.1f);
+
+        jumpLeftAnim = Animation(jumpLeftTexture, 122, 42, 2, 0.1f);
+        jumpRightAnim = Animation(jumpRightTexture, 122, 42, 2, 0.1f);
+
+        specialLeftAnim = Animation(specialLeftTexture, 258, 46, 4, 0.1f);
+        specialRightAnim = Animation(specialRightTexture, 258, 46, 4, 0.1f);
+
+        currentAnimation = &idleRightAnim;
 
         speed = 10.0f;
         isUsingSpecialAbility = false;
         specialAbilityLimit = 7.0f;
         specialAbilityTimer = 0.0f;
 
-
-        playerTexture.loadFromFile("Sprites/tails/tails.png");
-        playerSprite.setTexture(playerTexture);
-        playerSprite.setScale(scaleX, scaleY);
+        playerWidth = 31;
+        playerHeight = 46;
+        hitbox = Hitbox(position[0] + hitboxFactorX, position[1] + hitboxFactorY,
+            playerWidth - 2 * hitboxFactorX, playerHeight - 2 * hitboxFactorY);
     }
 
     void activateSpecialAbility() override {
-
         if (!isUsingSpecialAbility) {
             isUsingSpecialAbility = true;
             specialAbilityTimer = specialAbilityLimit;
             cout << "Tails flying" << endl;
+
+            // Play special ability sound
+            specialSound.play();
         }
     }
 
     void applySpecialAbilityEffect(Event ev) override {
-
         if (ev.type == Event::KeyPressed && ev.key.code == Keyboard::X) {
             if (isUsingSpecialAbility) {
                 velocity[1] = -10.0f;
             }
         }
-
-
     }
-
 
     void update(char** grid, const int cell_size) override {
         if (isUsingSpecialAbility) {
-
-
-
             if (hitbox.checkTopCollision(grid, cell_size, 'w')) {
                 float collisionPoint = hitbox.getTopCollisionPoint(grid, cell_size, 'w');
                 if (collisionPoint > 0) {
@@ -590,90 +597,73 @@ public:
             }
 
             updateHitbox();
+            updateAnimation(0.016f);
         }
         else {
             Player::update(grid, cell_size);
         }
     }
-
 };
 
-
+// Sonic class implementation
 class Sonic : public Player {
 private:
     float normalSpeed;
 
-    Texture stillRightTexture;
-    Texture walkRightTexture;
-    Texture stillLeftTexture;
-    Texture walkLeftTexture;
 public:
-
-
     Sonic() {
-        scaleX = 2.3;
-        scaleY = 2.3;
-        playerHeight = (static_cast<int>(35 * scaleX));
-        playerWidth = (static_cast<int>(24 * scaleY));
+        idleRightTexture.loadFromFile("Data/Player/sonic.png");
+        idleLeftTexture.loadFromFile("Data/Player/sonicL.png");
+        walkRightTexture.loadFromFile("Data/Player/Sonic_WalkR.png");
+        walkLeftTexture.loadFromFile("Data/Player/Sonic_WalkL.png");
+        jumpRightTexture.loadFromFile("Data/Player/Sonic_JumpR.png");
+        jumpLeftTexture.loadFromFile("Data/Player/Sonic_JumpL.png");
+        specialRightTexture.loadFromFile("Data/Player/Sonic_SAR.png");
+        specialLeftTexture.loadFromFile("Data/Player/Sonic_SAL.png");
 
+        // Configure the sound effects
+        jumpSoundBuffer.loadFromFile("Data/Sound/sonic_jump.wav");
+        jumpSound.setBuffer(jumpSoundBuffer);
 
-        normalSpeed = speed = 14.0f;
+        specialSoundBuffer.loadFromFile("Data/Sound/spin_dash.wav");
+        specialSound.setBuffer(specialSoundBuffer);
+
+        idleLeftAnim = Animation(idleLeftTexture, 36, 50, 1, 0.1f);
+        idleRightAnim = Animation(idleRightTexture, 36, 50, 1, 0.1f);
+
+        walkLeftAnim = Animation(walkLeftTexture, 540, 50, 10, 0.1f);
+        walkRightAnim = Animation(walkRightTexture, 540, 50, 10, 0.1f);
+
+        jumpLeftAnim = Animation(jumpLeftTexture, 385, 48, 8, 0.1f);
+        jumpRightAnim = Animation(jumpRightTexture, 385, 48, 8, 0.1f);
+
+        specialLeftAnim = Animation(specialLeftTexture, 400, 50, 8, 0.1f);
+        specialRightAnim = Animation(specialRightTexture, 400, 50, 8, 0.1f);
+
+        currentAnimation = &idleRightAnim;
+
+        normalSpeed = 14.0f;
+        speed = normalSpeed;
         isUsingSpecialAbility = false;
         specialAbilityLimit = 5.0f;
         specialAbilityTimer = 0.0f;
 
-        stillRightTexture.loadFromFile("Sprites/sonic/sonic_right_still.png");
-        walkRightTexture.loadFromFile("Sprites/sonic/sonic_walk_right.png");
-        stillLeftTexture.loadFromFile("Sprites/sonic/sonic_left_still.png");
-        walkLeftTexture.loadFromFile("Sprites/sonic/sonic_walk_left.png");
-
-        // Start with the right-facing still texture
-        playerTexture = stillRightTexture;
-        playerSprite.setTexture(playerTexture);
-        playerSprite.setScale(scaleX, scaleY);
+        playerWidth = 36;
+        playerHeight = 50;
+        hitbox = Hitbox(position[0] + hitboxFactorX, position[1] + hitboxFactorY,
+            playerWidth - 2 * hitboxFactorX, playerHeight - 2 * hitboxFactorY);
     }
-
 
     void activateSpecialAbility() override {
-
         if (!isUsingSpecialAbility) {
             isUsingSpecialAbility = true;
-
             specialAbilityTimer = specialAbilityLimit;
             speed = normalSpeed + 7.0f;
-
             cout << "Sonic Zooming" << endl;
 
+            // Play special ability sound
+            specialSound.play();
         }
-    }
-
-
-    void draw(RenderWindow& window, float direction, float offset) override {
-        // Select the appropriate texture based on movement and direction
-        if (direction < 0) {
-            if (isMoving) {
-                playerSprite.setTexture(walkLeftTexture);
-            }
-            else {
-                playerSprite.setTexture(stillLeftTexture);
-            }
-        }
-        else {
-            if (isMoving) {
-                playerSprite.setTexture(walkRightTexture);
-            }
-            else {
-                playerSprite.setTexture(stillRightTexture);
-            }
-        }
-
-        playerSprite.setScale(scaleX, scaleY);
-
-        playerSprite.setPosition(position[0] - offset, position[1]);
-        window.draw(playerSprite);
-
-		// Draw hitbox for debugging
-		drawHitbox(window, offset);
     }
 
     void update(char** grid, const int cell_size) override {
@@ -688,11 +678,9 @@ public:
             }
         }
     }
-
-
-
 };
 
+// Knuckles class implementation
 class Knuckles : public Player {
 private:
     bool isPunching;
@@ -701,29 +689,56 @@ private:
 
 public:
     Knuckles() {
-        scaleX = 2.7;
-        scaleY = 2.7;
-        playerHeight = (static_cast<int>(35 * scaleX));
-        playerWidth = (static_cast<int>(24 * scaleY));
+        idleRightTexture.loadFromFile("Data/Player/knucklesR.png");
+        idleLeftTexture.loadFromFile("Data/Player/knucklesL.png");
+        walkRightTexture.loadFromFile("Data/Player/Knuckles_WalkR.png");
+        walkLeftTexture.loadFromFile("Data/Player/Knuckles_WalkL.png");
+        jumpRightTexture.loadFromFile("Data/Player/k_jump_right.png");
+        jumpLeftTexture.loadFromFile("Data/Player/k_jump_left.png");
+        specialRightTexture.loadFromFile("Data/Player/Knuckles_SAR.png");
+        specialLeftTexture.loadFromFile("Data/Player/Knuckles_SAL.png");
 
+        // Configure the sound effects
+        jumpSoundBuffer.loadFromFile("Data/Sound/knuckles_jump.wav");
+        jumpSound.setBuffer(jumpSoundBuffer);
+
+        specialSoundBuffer.loadFromFile("Data/Sound/knuckles_punch.wav");
+        specialSound.setBuffer(specialSoundBuffer);
+
+        idleLeftAnim = Animation(idleLeftTexture, 35, 52, 1, 0.1f);
+        idleRightAnim = Animation(idleRightTexture, 35, 52, 1, 0.1f);
+
+        walkLeftAnim = Animation(walkLeftTexture, 657, 52, 12, 0.1f);
+        walkRightAnim = Animation(walkRightTexture, 657, 52, 12, 0.1f);
+
+        jumpLeftAnim = Animation(jumpLeftTexture, 800, 52, 16, 0.1f);
+        jumpRightAnim = Animation(jumpRightTexture, 800, 52, 16, 0.1f);
+
+        specialLeftAnim = Animation(specialLeftTexture, 157, 50, 2, 0.1f);
+        specialRightAnim = Animation(specialRightTexture, 157, 50, 2, 0.1f);
+
+        currentAnimation = &idleRightAnim;
 
         speed = 12.0f;
         isPunching = false;
-
         punchingDuration = 5.0f;
         punchingTimer = 0.0f;
 
-        playerTexture.loadFromFile("Sprites/knuckles/knuckles.png");
-        playerSprite.setTexture(playerTexture);
-        playerSprite.setScale(scaleX, scaleY);
+        playerWidth = 35;
+        playerHeight = 52;
+        hitbox = Hitbox(position[0] + hitboxFactorX, position[1] + hitboxFactorY,
+            playerWidth - 2 * hitboxFactorX, playerHeight - 2 * hitboxFactorY);
     }
-
 
     void activateSpecialAbility() override {
         if (!isPunching) {
             isPunching = true;
+            isUsingSpecialAbility = true;
             punchingTimer = punchingDuration;
             cout << "Knuckles is now a bodmosh!" << endl;
+
+            // Play special ability sound
+            specialSound.play();
         }
     }
 
@@ -734,12 +749,13 @@ public:
             punchingTimer -= 0.016f;
             if (punchingTimer <= 0) {
                 isPunching = false;
+                isUsingSpecialAbility = false;
                 cout << "Knuckles' punching ended" << endl;
             }
         }
     }
-
 };
+
 
 
 class PlayerFactory {
