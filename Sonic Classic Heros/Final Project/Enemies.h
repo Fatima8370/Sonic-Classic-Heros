@@ -31,7 +31,6 @@ protected:
     SoundBuffer sound;
     Sound dying;
 
-    // Add a hitbox member to the Enemies class
 
     Animation enemyL;
     Animation enemyR;
@@ -50,7 +49,7 @@ public:
         sound.loadFromFile("Data/sounds/punch.wav");
 
         dying.setBuffer(sound);
-        dying.setPlayingOffset(seconds(.4));
+        dying.setPlayingOffset(seconds(.25f));
         dying.setVolume(100);
 
         // Set default animation to right (will be updated in update())
@@ -88,7 +87,6 @@ public:
         }
     }
 
-    // Optional: Helper method to visualize hitboxes for debugging
     void drawHitbox(RenderWindow& window, float offset) {
         RectangleShape hitboxRect;
         hitboxRect.setPosition(hitbox.getX() - offset, hitbox.getY());
@@ -147,7 +145,7 @@ public:
 
     void update(float playerX, float playerY, float deltaTime) override {
         if (detectArea(playerX, playerY) && !died) {
-            cout << "Following player at " << playerX << ", " << playerY << endl;
+
             followPlayer(playerX);
             // Note: die() will be called in the EnemyFactory::updateEnemies method
         }
@@ -579,41 +577,26 @@ public:
     }
 };
 
+// Refactored Factory Classes
+
+
 class EnemyFactory {
 private:
-    static const int MAX_ENEMIES = 20;
-    Enemies* enemies[MAX_ENEMIES];
-    float usedX[MAX_ENEMIES];
-    int count;
-
     int gridHeight, gridWidth;
     int levelNum;
 
-    // Minimum distance between enemies
-    const float MIN_ENEMY_DISTANCE = 150.0f;
-
-    bool isFarFromOthers(float x) {
-        for (int i = 0; i < count; ++i) {
-            if (abs(x - usedX[i]) < MIN_ENEMY_DISTANCE)
-                return false;
-        }
-        return true;
-    }
-
 public:
     EnemyFactory(int height, int width, int lvl)
-        : gridHeight(height), gridWidth(width), levelNum(lvl), count(0)
+        : gridHeight(height), gridWidth(width), levelNum(lvl)
     {
-        for (int i = 0; i < MAX_ENEMIES; ++i)
-            enemies[i] = nullptr;
-
         cout << "In Enemy Factory\n";
     }
 
     ~EnemyFactory() {
-        clearEnemies();
+        // No need to manage arrays in the factory
     }
 
+    // Create a single enemy
     Enemies* createEnemy(const char& type, float spawnX, float spawnY) {
         Enemies* enemy = nullptr;
 
@@ -621,50 +604,44 @@ public:
         else if (type == '1') enemy = new Motobug();
         else if (type == '3') enemy = new BeeBot();
         else if (type == '4') enemy = new CrabMeat();
-        //else  enemy = new EggStinger();
+        else enemy = new EggStinger();
 
         if (enemy) {
             enemy->setPosition(spawnX, spawnY);
-            cout << "Created " << type << " at (" << spawnX << ", " << spawnY << ")" << endl;
         }
+
         return enemy;
     }
 
-    // Modified updateEnemies method to use player hitbox instead of coordinates
-    void updateEnemies(RenderWindow& window, Enemies* enemy[], int count, float offsetX,
-        float deltaTime, Player* player)
-    {
+    // Update an array of enemies
+    void updateEnemies(RenderWindow& window, Enemies** enemies, int enemyCount, float offsetX, float deltaTime, Player* player) {
+             
         const Hitbox playerHitbox = player->getHitbox();
-
         bool attack = player->getIsJumping();
 
-        for (int i = 0; i < count; i++)
-        {
-            if (enemy[i])
-            {
-                // Update all enemies using the unified update method
-                enemy[i]->update(playerHitbox.getX(), playerHitbox.getY(), deltaTime);
+        for (int i = 0; i < enemyCount; i++) {
+            if (enemies[i] != nullptr) {
+                
 
-                // Draw with scrolling offset
-                enemy[i]->render(window, offsetX);
+                enemies[i]->update(playerHitbox.getX(), playerHitbox.getY(), deltaTime);
 
-                // Handle attack/die logic with hitbox
+                enemies[i]->render(window, offsetX);
+
+
                 if (attack) {
-                    enemy[i]->die(playerHitbox);
+                    enemies[i]->die(playerHitbox);
                 }
-                else if (enemy[i]->isDead()) {
-                    // Handle enemy death
-                    cout << "Enemy " << i << " is dead!" << endl;
-                    delete enemy[i];
-                    enemy[i] = nullptr;
-                    count--;
+
+                if (enemies[i]->isDead()) {
+                    delete enemies[i];
+                    enemies[i] = nullptr;
                 }
                 else {
-                    player->takeDamage(enemy[i]->getHitbox());
+                    player->takeDamage(enemies[i]->getHitbox());
                 }
 
                 // Check if shooting enemy's bullets hit player
-                ShootingType* shootingEnemy = dynamic_cast<ShootingType*>(enemy[i]);
+                ShootingType* shootingEnemy = dynamic_cast<ShootingType*>(enemies[i]);
                 if (shootingEnemy) {
                     if (shootingEnemy->checkBulletCollision(playerHitbox)) {
                         // Player is hit by bullet, handle damage here
@@ -672,24 +649,12 @@ public:
                         player->takeDamage(shootingEnemy->getBulletHitbox());
                     }
                 }
+                
+               
             }
         }
-    }
 
-    // Clear all enemies - useful when changing levels
-    void clearEnemies() {
-        for (int i = 0; i < count; i++) {
-            if (enemies[i]) {
-                delete enemies[i];
-                enemies[i] = nullptr;
-            }
-        }
-        count = 0;
-        cout << "All enemies cleared" << endl;
     }
-
-    int getCount() const { return count; }
-    Enemies** getAllEnemies() { return enemies; }
 };
 
 

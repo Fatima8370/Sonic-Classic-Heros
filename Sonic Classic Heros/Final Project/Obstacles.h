@@ -21,7 +21,6 @@ LevelTrigger : the bricks fall down after top collision
 all used using hitbox
 */
 
-// Base class for all obstacles
 class Obstacles : public GameEntity {
 protected:
     char type;
@@ -32,11 +31,11 @@ protected:
     bool isColliding;
 
 public:
-    Obstacles() {
-		hitbox = Hitbox(x, y, 64, 64);
+    Obstacles() : isColliding(false) {
+        hitbox = Hitbox(x, y, 64, 64);
     }
 
-    void draw(RenderWindow& window, float directionFaced, float offsetX) override { }
+    void draw(RenderWindow& window, float directionFaced, float offsetX) override {}
 
     void update(char** grid, const int cell_size = 64) override {}
 
@@ -44,21 +43,30 @@ public:
         x = xPos;
         y = yPos;
         sprite.setPosition(x, y);
+        hitbox.updateHitbox(x, y);
     }
 
-   virtual void render(RenderWindow& window, float offset)  override{
+    void drawHitbox(RenderWindow& window, float offset) {
+        RectangleShape hitboxRect;
+        hitboxRect.setPosition(hitbox.getX() - offset, hitbox.getY());
+        hitboxRect.setSize(Vector2f(hitbox.getWidth(), hitbox.getHeight()));
+        hitboxRect.setFillColor(Color::Transparent);
+        hitboxRect.setOutlineColor(Color::Red);
+        hitboxRect.setOutlineThickness(1.0f);
+        window.draw(hitboxRect);
+    }
+
+    virtual void render(RenderWindow& window, float offset) override {
         sprite.setPosition(x - offset, y);  // Apply offset for scrolling
         window.draw(sprite);
+        drawHitbox(window, offset);
     }
 
     virtual void checkCollision(Player* player) = 0;
 
-
-
-
-	bool isCollidingWithPlayer() const {
+    bool isCollidingWithPlayer() const {
         return isColliding;
-	}
+    }
 
     virtual ~Obstacles() {}
 };
@@ -68,54 +76,72 @@ class Wall : public Obstacles {
     bool breakable;
 
 public:
-    Wall(bool isBreakable = false) {
-        type = 'W';
-        breakable = isBreakable;
+    Wall(bool isBreakable = false) : breakable(isBreakable) {
+        type = isBreakable ? 'B' : 'W';
+
         if (breakable)
-        {
-            type = 'B';
             texture.loadFromFile("Data/breakable_wall.png");
-        }
         else
             texture.loadFromFile("Data/brick2.png");
 
         sprite.setTexture(texture);
     }
 
-	bool isBreakable() const {
-		return breakable;
-	}
+    bool isBreakable() const {
+        return breakable;
+    }
 
     void checkCollision(Player* player) override {
+        isColliding = false;
 
-        if (player->getHitbox().checkCollision(hitbox) ) {
+        if (player->getHitbox().checkCollision(hitbox)) {
 
+            bool topCollision = hitbox.checkTopCollision(player->getHitbox());
+            bool bottomCollision = hitbox.checkBottomCollision(player->getHitbox());
+            bool leftCollision = hitbox.checkLeftCollision(player->getHitbox());
+            bool rightCollision = hitbox.checkRightCollision(player->getHitbox());
 
             // If wall is breakable and player is attacking, break it
             if (breakable && player->isAttacking()) {
-                
-                // knuckles implementable
-
-
+                // Implementation for breaking wall would go here
+                // For now, just set a flag that it's being broken
+                isColliding = true;
+                return;
             }
 
-			if (hitbox.checkAllSidesCollision(player->getHitbox())) {
-				// Player is colliding with the wall
-				isColliding = true; // Set collision flag
-				player->setPosition(player->getX(), hitbox.getY() - player->getHitbox().getHeight());
-				player->stopFalling();
-			}
-			else {
-				isColliding = false; // Reset collision flag if not colliding
-			}
-
-
-
-
+            // Handle top collision (player landing on top of wall)
+            if (topCollision) {
+                isColliding = true;
+                player->setPosition(player->getX(), hitbox.getY() - player->getHitbox().getHeight());
+                player->stopFalling();
+				player->stopJumping();
+                player->stopMoving();
+            }
+            // Handle side collisions (player walking into wall)
+            else if (leftCollision) {
+                isColliding = true;
+                player->setPosition(hitbox.getX() - player->getHitbox().getWidth(), player->getY());
+                player->setVelocityX(0);
+                player->stopMoving();
+                player->stopFalling();
+                player->stopJumping();
+            }
+            else if (rightCollision) {
+                isColliding = true;
+                player->setPosition(hitbox.getX() + hitbox.getWidth(), player->getY());
+                player->setVelocityX(0);
+                player->stopMoving();
+                player->stopFalling();
+                player->stopJumping();
+            }
+            // Handle bottom collision (player jumping into wall from below)
+            else if (bottomCollision) {
+                isColliding = true;
+                player->setPosition(player->getX(), hitbox.getY() + hitbox.getHeight());
+                player->stopJumping();
+				player->setVelocityY(0);
+            }
         }
-
-        
-        
     }
 };
 
@@ -123,129 +149,129 @@ public:
 class Spikes : public Obstacles {
 public:
     Spikes() {
-        type = 's';
+        type = 'S';
         texture.loadFromFile("Data/spike.png");
         sprite.setTexture(texture);
     }
 
-    void checkCollision(Player * player) override {
+    void checkCollision(Player* player) override {
+        isColliding = false;
 
-        if (player->getHitbox().checkBottomCollision(hitbox)) {
-
-			isColliding = true; // Set collision flag
-            player->takeDamage(10); // Assuming you have a takeDamage method
-			player->stopFalling(); // Stop player from falling
-            player->stopJumping();
-        }
-        else {
-			isColliding = false; // Reset collision flag if not colliding
-			player->setVelocityX(0.0f);
+        if (player->getHitbox().checkCollision(hitbox)) {
+            // Check if player is colliding with the top of the spikes
+            if (player->getHitbox().checkBottomCollision(hitbox)) {
+                isColliding = true;
+                player->takeDamage(10);
+                player->stopFalling();
+                player->stopJumping();
+            }
+            // Check for side collisions with spikes
+            else if (hitbox.checkLeftCollision(player->getHitbox()) ||
+                hitbox.checkRightCollision(player->getHitbox())) 
+            {
+                isColliding = true;
+				player->setVelocityX(0);
+                player->stopFalling();
+                player->stopMoving();
+				player->stopJumping();
+            }
         }
     }
 };
 
-// Platform class (Now correctly using 64x64 dimensions)
-class Platform : public Obstacles{
-private:
-
-    float x, y;   // Position of the platform (top-left corner)
-    int width, height; // Size of the platform (width and height)
-
+// Platform class
+class Platform : public Obstacles {
 public:
     Platform() {
-
         type = 'P';
         texture.loadFromFile("Data/brick1.png");
         sprite.setTexture(texture);
-
     }
 
-    // Check if hitbox collides with the platform (lands on top of it)
+    // Check if player collides with the platform (lands on top of it)
     void checkCollision(Player* player) override {
 
 
-        if (player->getHitbox().checkBottomCollision(hitbox) &&
+        if (player->getVelocityY() > 0 &&
+            player->getHitbox().checkBottomCollision(hitbox) &&
             hitbox.checkTopCollision(player->getHitbox())) {
 
-            isColliding = true; // Set collision flag
-
-            player->setPosition(hitbox.getX(), hitbox.getY() - hitbox.getHeight());
+            player->setPosition(player->getX(), hitbox.getY() - player->getHitbox().getHeight());
             player->stopFalling();
+            player->stopMoving();
+            player->stopJumping();
         }
     }
-
-
 };
-
 
 class LevelTrigger : public Obstacles {
 private:
-    float width, height;
     bool triggered;
     float fallSpeed;
 
 public:
-    LevelTrigger() : triggered(false), fallSpeed(2.0f) {
-        type = 'T';  // Assign the type of obstacle
-        width = 64;
-        height = 64;
+    LevelTrigger() : triggered(false), fallSpeed(128.0f) {
+        type = 'T';
 
-        // Load the texture
         if (!texture.loadFromFile("Data/ground.png")) {
-            std::cerr << "Error loading level trigger texture!" << std::endl;
         }
         sprite.setTexture(texture);
     }
 
-    void checkCollision(Player * player) override {
-        // Detect if the hitbox interacts with the level trigger
+    void checkCollision(Player* player) override {
+        isColliding = false;
 
-
-        if (player->getHitbox().checkBottomCollision(hitbox) &&
+        // Check if player is landing on top of the trigger
+        if (player->getVelocityY() > 0 &&
+            player->getHitbox().checkBottomCollision(hitbox) &&
             hitbox.checkTopCollision(player->getHitbox())) {
 
-			isColliding = true; // Set collision flag
+            isColliding = true;
+            player->setPosition(player->getX(), hitbox.getY() - player->getHitbox().getHeight());
+            player->stopFalling();
 
             if (!triggered) {
                 triggered = true;
-                std::cout << "Level Trigger Activated!" << std::endl;
-                if (triggered) {
-                    // Move the trigger off-screen
-                    sprite.move(0, fallSpeed);
-                }
+                cout << "Level Trigger Activated!" << endl;
+                // Move the trigger downward when activated
+                y += fallSpeed;
+                hitbox.updateHitbox(x, y);
+            }
+            else {
+                player->setPosition(player->getX(), hitbox.getY() - player->getHitbox().getHeight());
+                player->stopFalling();
+                player->stopMoving();
+                player->stopJumping();
             }
         }
     }
 
-	bool isTriggered() const {
-		return triggered;
-	}
+    bool isTriggered() const {
+        return triggered;
+    }
 
-    
+    void update(char** grid, const int cell_size) override {
+        if (triggered) {
+            // Continue moving the trigger downward after activation
+            y += fallSpeed;
+            hitbox.updateHitbox(x, y);
+            sprite.setPosition(x, y);
+        }
+    }
 };
-
 class ObstacleFactory {
 private:
-    static const int MAX_OBSTACLES = 500;
-    Obstacles* obstacles[MAX_OBSTACLES];
-    float usedPositions[MAX_OBSTACLES][2]; // Store x,y coordinates
-    int count;
     int gridHeight, gridWidth;
     int levelNum;
 
 public:
-    ObstacleFactory(int obstacleCount, int height, int width, int lvl)
-        : count(0), gridHeight(height), gridWidth(width), levelNum(lvl)
-    {
-        for (int i = 0; i < MAX_OBSTACLES; ++i)
-            obstacles[i] = nullptr;
-        cout << "In Obstacle Factory\n";
-    }
+    ObstacleFactory(int height, int width, int lvl) : gridHeight(height), gridWidth(width), levelNum(lvl) {    }
 
     ~ObstacleFactory() {
-        clearObstacles();
+        // No need to manage arrays in the factory
     }
 
+    // Create a single obstacle
     Obstacles* createObstacle(const char& type, float spawnX, float spawnY) {
         Obstacles* obstacle = nullptr;
 
@@ -259,47 +285,27 @@ public:
 
         if (obstacle) {
             obstacle->setPosition(spawnX, spawnY);
-            cout << "Created " << type << " at (" << spawnX << ", " << spawnY << ")" << endl;
-
-            // Store the position for the created obstacle
-            if (count < MAX_OBSTACLES) {
-                obstacles[count] = obstacle;
-                usedPositions[count][0] = spawnX;
-                usedPositions[count][1] = spawnY;
-                count++;
-            }
         }
 
         return obstacle;
     }
 
-    void updateObstacles(RenderWindow& window, Obstacles* obstacle[], int obstacleCount,
+    // Update an array of obstacles
+    void updateObstacles(RenderWindow& window, Obstacles** obstacles, int obstacleCount,
         float offsetX, Player* player) {
+
         for (int i = 0; i < obstacleCount; i++) {
-            if (obstacle[i]) {
-                // Render the obstacle with scrolling offset
-                obstacle[i]->render(window, offsetX);
-
+            if (obstacles[i] != nullptr) {
+                
+                // Render obstacles with scrolling offset
+                obstacles[i]->render(window, offsetX);
                 // Check collision with player
-                obstacle[i]->checkCollision(player);
+                obstacles[i]->checkCollision(player);
+                
             }
         }
     }
 
-    void clearObstacles() {
-        for (int i = 0; i < count; i++) {
-            if (obstacles[i]) {
-                delete obstacles[i];
-                obstacles[i] = nullptr;
-            }
-        }
-        count = 0;
-        cout << "All obstacles cleared" << endl;
-    }
-
-    int getCount() const { return count; }
-    Obstacles** getAllObstacles() { return obstacles; }
 };
-
 
 

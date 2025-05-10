@@ -14,19 +14,16 @@ private:
     float topOffset, bottomOffset;
 
 public:
-    Hitbox(float x = 0.0f, float y = 0.0f, float w = 0.0f, float h = 0.0f) :
-        x(x), y(y), width(w), height(h) {
+    Hitbox(float x = 0.0f, float y = 0.0f, float w = 0.0f, float h = 0.0f) : x(x), y(y), width(w), height(h) {
+
         topOffset = 0.0f;
         bottomOffset = height;
         leftOffset = 0.0f;
         rightOffset = width;
 
-        cout << "H" << endl;
     }
 
-    ~Hitbox() {
-        cout << "~H" << endl;
-    }
+    ~Hitbox() { }
 
     void setOffsets(float t, float b, float l, float r) {
         topOffset = t;

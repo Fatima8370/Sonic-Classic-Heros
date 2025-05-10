@@ -21,17 +21,13 @@ protected:
 
 public:
 	GameEntity(float x = 0.0f, float y = 0.0f, char s = ' ') : symbol(s) {
-		position[0] = 64*3;
+		position[0] = 64*20;
 		position[1] = 64*7;
 
 		hitbox = Hitbox(x, y, 0, 0);
-		cout << "Game Entity  at positions: " << position[0] << ' ' << position[1] << endl;
-
 	}
 
-	virtual ~GameEntity() {
-		cout << "~Game Entity" << endl;
-	}
+	virtual ~GameEntity() {	}
 
 
 

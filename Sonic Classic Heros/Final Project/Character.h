@@ -90,12 +90,12 @@ public:
         invincibilityTimer(0.0f),
         isMoving(false),
         speed(0.0f),
-        jumpStrength(-30.0f),
+        jumpStrength(-25.0f),
         onGround(true),
         isJumping(false),
         isActive(false),
         leader(nullptr),
-        followDistance(60.0f),
+        followDistance(30.0f),
         followLimit(5.0f),
         jumpLimit(5.0f),
         maxFollowLimit(100.0f),
@@ -274,16 +274,18 @@ public:
         }
 
 		if (position[0] < 0) { // fixed screen size
-            position[0] = 64;
+            position[0] = 128;
         }
         else if (position[0] >= gridWidth*64 ) {
-            position[0] = 64 * (gridWidth - 2);
+            position[0] = 64 * (gridWidth );
         }
 
         velocity[0] = speed * directionX;
         position[0] += velocity[0];
 
         updateHitbox();
+
+        
 
         if (directionX != 0) { lastDirection = directionX; }
     }
@@ -307,7 +309,7 @@ public:
 
         if (velocity[1] < 0) {
             if (hitbox.checkTopCollision(grid, cell_size, 'w')) {
-                float collisionPoint = hitbox.getTopCollisionPoint(grid, cell_size, 'w');
+                float collisionPoint = hitbox.getTopCollisionPoint(grid, cell_size, 'W');
 
                 if (collisionPoint > 0) {
                     position[1] = collisionPoint;
@@ -374,9 +376,12 @@ public:
         float offsetY = position[1] + velocity[1];
         float collisionY = 0.0f;
 
-        bool collision = checkBottomCollision(grid, cell_size, 'w', collisionY);
+        bool collisionWall = checkBottomCollision(grid, cell_size, 'W', collisionY);
+        bool collisionPlatform = checkBottomCollision(grid, cell_size, 'P', collisionY);
+        bool collisionLevelTrigger = checkBottomCollision(grid, cell_size, 'T', collisionY);
 
-        /*if (collision) {
+
+        if (collisionWall || collisionPlatform ) {
             position[1] = collisionY;
             velocity[1] = 0.0f;
             onGround = true;
@@ -384,12 +389,15 @@ public:
         else {
             position[1] = offsetY;
             onGround = false;
-        }*/
+        }
 
-        if (position[1] > 900) { // fixed screen size
-            position[1] = 900 - 64;
+        if (position[1] >= 832) { // Bottomless Pit
+            position[1] = 832;
             velocity[1] = 0.0f;
+            cout << "GAME OVER\n";
             onGround = true;
+
+			exit(0);
         }
 
         updateHitbox();
@@ -429,6 +437,14 @@ public:
             if (leader->getIsJumping() && leaderPosition[1] < position[1] - jumpLimit) {
                 jump();
             }
+
+            if (position[0] < 0) { // fixed screen size
+                position[0] = 128;
+            }
+            else if (position[0] >= gridWidth * 64) {
+                position[0] = 64 * (gridWidth - 1);
+            }
+
         }
     }
 
@@ -480,6 +496,10 @@ public:
         isJumping = false;
     }
 
+    void stopMoving() {
+        isMoving = false;
+    }
+
     float getX() { return GameEntity::position[0]; }
     float getY() { return GameEntity::position[1]; }
 
@@ -492,6 +512,14 @@ public:
         hitboxRect.setOutlineThickness(1.0f);
         window.draw(hitboxRect);
     }
+
+
+    virtual void Boosts() {  }
+
+    void Extra() {
+        hp += 50;
+    }
+
 };
 
 int Player::hp = 100, Player::lives = 3;
@@ -516,17 +544,17 @@ public:
         specialSoundBuffer.loadFromFile("Data/Sound/tails_fly.wav");
         specialSound.setBuffer(specialSoundBuffer);
 
-        idleLeftAnim = Animation(idleLeftTexture, 31, 46, 1, 0.1f);
-        idleRightAnim = Animation(idleRightTexture, 31, 46, 1, 0.1f);
+        idleLeftAnim = Animation(idleLeftTexture, 46, 68, 1, 0.1f);
+        idleRightAnim = Animation(idleRightTexture, 46, 68, 1, 0.1f);
 
-        walkLeftAnim = Animation(walkLeftTexture, 578, 46, 10, 0.1f);
-        walkRightAnim = Animation(walkRightTexture, 578, 46, 10, 0.1f);
+        walkLeftAnim = Animation(walkLeftTexture, 855, 68, 10, 0.1f);
+        walkRightAnim = Animation(walkRightTexture, 855, 68, 10, 0.1f);
 
-        jumpLeftAnim = Animation(jumpLeftTexture, 122, 42, 2, 0.1f);
-        jumpRightAnim = Animation(jumpRightTexture, 122, 42, 2, 0.1f);
+        jumpLeftAnim = Animation(jumpLeftTexture, 180, 62, 2, 0.1f);
+        jumpRightAnim = Animation(jumpRightTexture, 180, 62, 2, 0.1f);
 
-        specialLeftAnim = Animation(specialLeftTexture, 258, 46, 4, 0.1f);
-        specialRightAnim = Animation(specialRightTexture, 258, 46, 4, 0.1f);
+        specialLeftAnim = Animation(specialLeftTexture, 381, 68, 4, 0.1f);
+        specialRightAnim = Animation(specialRightTexture, 381, 68, 4, 0.1f);
 
         currentAnimation = &idleRightAnim;
 
@@ -535,8 +563,8 @@ public:
         specialAbilityLimit = 7.0f;
         specialAbilityTimer = 0.0f;
 
-        playerWidth = 31;
-        playerHeight = 46;
+        playerWidth = 46;
+        playerHeight = 68;
         hitbox = Hitbox(position[0] + hitboxFactorX, position[1] + hitboxFactorY,
             playerWidth - 2 * hitboxFactorX, playerHeight - 2 * hitboxFactorY);
     }
@@ -560,10 +588,17 @@ public:
         }
     }
 
+	void Boosts() override {
+		if (isUsingSpecialAbility) {
+			 specialAbilityTimer += 4.0f;
+			cout << "Flight Time Increased by 4.0s \n" << endl;
+		}
+	}
+
     void update(char** grid, const int cell_size) override {
         if (isUsingSpecialAbility) {
-            if (hitbox.checkTopCollision(grid, cell_size, 'w')) {
-                float collisionPoint = hitbox.getTopCollisionPoint(grid, cell_size, 'w');
+            if (hitbox.checkTopCollision(grid, cell_size, 'W')) {
+                float collisionPoint = hitbox.getTopCollisionPoint(grid, cell_size, 'W');
                 if (collisionPoint > 0) {
                     position[1] = collisionPoint;
                     velocity[1] = 0.0f;
@@ -579,8 +614,8 @@ public:
 
             float offsetY = position[1] + velocity[1];
 
-           /* float collisionY = 0.0f;
-            bool collision = checkBottomCollision(grid, cell_size, 'w', collisionY);
+            float collisionY = 0.0f;
+            bool collision = checkBottomCollision(grid, cell_size, 'W', collisionY);
 
             if (collision && velocity[1] > 0) {
                 position[1] = collisionY;
@@ -592,7 +627,7 @@ public:
             else {
                 position[1] = offsetY;
                 onGround = false;
-            }*/
+            }
 
             if (specialAbilityTimer <= 0) {
                 isUsingSpecialAbility = false;
@@ -631,17 +666,17 @@ public:
         specialSoundBuffer.loadFromFile("Data/Sound/spin_dash.wav");
         specialSound.setBuffer(specialSoundBuffer);
 
-        idleLeftAnim = Animation(idleLeftTexture, 36, 50, 1, 0.1f);
-        idleRightAnim = Animation(idleRightTexture, 36, 50, 1, 0.1f);
+        idleLeftAnim = Animation(idleLeftTexture, 50, 70, 1, 0.1f);
+        idleRightAnim = Animation(idleRightTexture, 50, 70, 1, 0.1f);
 
-        walkLeftAnim = Animation(walkLeftTexture, 540, 50, 10, 0.1f);
-        walkRightAnim = Animation(walkRightTexture, 540, 50, 10, 0.1f);
+        walkLeftAnim = Animation(walkLeftTexture, 756, 70, 10, 0.1f);
+        walkRightAnim = Animation(walkRightTexture, 756, 70, 10, 0.1f);
 
-        jumpLeftAnim = Animation(jumpLeftTexture, 385, 48, 8, 0.1f);
-        jumpRightAnim = Animation(jumpRightTexture, 385, 48, 8, 0.1f);
+        jumpLeftAnim = Animation(jumpLeftTexture, 520, 56, 8, 0.1f);
+        jumpRightAnim = Animation(jumpRightTexture, 520, 56, 8, 0.1f);
 
-        specialLeftAnim = Animation(specialLeftTexture, 400, 50, 8, 0.1f);
-        specialRightAnim = Animation(specialRightTexture, 400, 50, 8, 0.1f);
+        specialLeftAnim = Animation(specialLeftTexture, 560, 70, 8, 0.1f);
+        specialRightAnim = Animation(specialRightTexture, 560, 70, 8, 0.1f);
 
         currentAnimation = &idleRightAnim;
 
@@ -651,8 +686,8 @@ public:
         specialAbilityLimit = 5.0f;
         specialAbilityTimer = 0.0f;
 
-        playerWidth = 36;
-        playerHeight = 50;
+        playerWidth = 50;
+        playerHeight = 70;
         hitbox = Hitbox(position[0] + hitboxFactorX, position[1] + hitboxFactorY,
             playerWidth - 2 * hitboxFactorX, playerHeight - 2 * hitboxFactorY);
     }
@@ -681,6 +716,16 @@ public:
             }
         }
     }
+
+    void Boosts() override {
+
+        if (isUsingSpecialAbility) {
+            speed = normalSpeed + 11.0f;  // overall change
+            cout << "Speed increased +4 \n" << endl;
+        }
+    }
+
+
 };
 
 // Knuckles class implementation
@@ -708,17 +753,17 @@ public:
         specialSoundBuffer.loadFromFile("Data/Sound/knuckles_punch.wav");
         specialSound.setBuffer(specialSoundBuffer);
 
-        idleLeftAnim = Animation(idleLeftTexture, 35, 52, 1, 0.1f);
-        idleRightAnim = Animation(idleRightTexture, 35, 52, 1, 0.1f);
+        idleLeftAnim = Animation(idleLeftTexture, 48, 72, 1, 0.1f);
+        idleRightAnim = Animation(idleRightTexture, 48, 72, 1, 0.1f);
 
-        walkLeftAnim = Animation(walkLeftTexture, 657, 52, 12, 0.1f);
-        walkRightAnim = Animation(walkRightTexture, 657, 52, 12, 0.1f);
+        walkLeftAnim = Animation(walkLeftTexture, 910, 72, 12, 0.1f);
+        walkRightAnim = Animation(walkRightTexture, 910, 72, 12, 0.1f);
 
-        jumpLeftAnim = Animation(jumpLeftTexture, 800, 52, 16, 0.1f);
-        jumpRightAnim = Animation(jumpRightTexture, 800, 52, 16, 0.1f);
+        jumpLeftAnim = Animation(jumpLeftTexture, 1108, 72, 16, 0.1f);
+        jumpRightAnim = Animation(jumpRightTexture, 1108, 72, 16, 0.1f);
 
-        specialLeftAnim = Animation(specialLeftTexture, 157, 50, 2, 0.1f);
-        specialRightAnim = Animation(specialRightTexture, 157, 50, 2, 0.1f);
+        specialLeftAnim = Animation(specialLeftTexture, 220, 70, 2, 0.1f);
+        specialRightAnim = Animation(specialRightTexture, 220, 70, 2, 0.1f);
 
         currentAnimation = &idleRightAnim;
 
@@ -727,8 +772,8 @@ public:
         punchingDuration = 5.0f;
         punchingTimer = 0.0f;
 
-        playerWidth = 35;
-        playerHeight = 52;
+        playerWidth = 48;
+        playerHeight = 72;
         hitbox = Hitbox(position[0] + hitboxFactorX, position[1] + hitboxFactorY,
             playerWidth - 2 * hitboxFactorX, playerHeight - 2 * hitboxFactorY);
     }
@@ -757,6 +802,18 @@ public:
             }
         }
     }
+
+    void Boosts() override{
+
+        if (isUsingSpecialAbility) {
+
+            invincibilityTimer += 15.0f;
+			cout << "Knuckles is now invincible for 15 seconds!" << endl;
+        }
+
+    }
+
+
 };
 
 

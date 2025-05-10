@@ -31,6 +31,8 @@ protected:
 public:
     Collectibles() : isCollected(false), boxlen(32) { x = 0; y = 0; }
 
+    virtual ~Collectibles() {}
+
     void update(char** grid, const int cell_size) override {};
 
     float* getPosition()override  { return position; }
@@ -58,14 +60,12 @@ public:
         window.draw(hitboxRect);
     }
 
-    virtual void render(sf::RenderWindow& window, float offset) override{
+    virtual void render(RenderWindow& window, float offset) override{
 
         if (!isCollected) {
             // render the main collectible sprite (base sprite)
             a.setPosition(x - offset, y);
             window.draw(a);
-
-            drawHitbox(window, offset);
 
             // If the collectible is a boost/extra life,render the small icon on top
             if (stick.getTexture()) {
@@ -95,16 +95,20 @@ class Rings : public Collectibles {
     Texture text;
 
 public:
-    Rings() {
-        b.loadFromFile("Data/rings.png");
+    Rings(float x , float y) {
+
+		this->x = x; this->y = y;
+
+        text.loadFromFile("Data/rings.png");
          
-		collect = Animation(b, 128, 32, 4, 0.1f);
+		collect = Animation(text, 128, 32, 4, 0.1f);
 
 		hitbox = Hitbox(x, y, 32, 32);
     }
 
-    void render(sf::RenderWindow& window, float offset) override {
+    void render(RenderWindow& window, float offset) override {
         if (!isCollected) {
+			collect.setPosition(x - offset, y);
             collect.draw(window);
             drawHitbox(window, offset);
         }
@@ -113,15 +117,14 @@ public:
 
 class Boosts : public Collectibles {
 public:
-    Boosts() {
-        if (!b.loadFromFile("Data/Boost_Box.png")) {
-            cerr << "Error loading texture!" << endl;
-        }
+    Boosts(float x, float y) {
+
+        this->x = x; this->y = y;
+
+        b.loadFromFile("Data/Boost_Box.png");
         a.setTexture(b);
 
-        if (!life.loadFromFile("boost.png")) {
-            cerr << "Error loading boost icon!" << endl;
-        }
+        life.loadFromFile("Data/boost.png");
         stick.setTexture(life);
 
 		hitbox = Hitbox(x, y, 32, 32);
@@ -130,15 +133,15 @@ public:
 
 class ExtraLife : public Collectibles {
 public:
-    ExtraLife() {
-        if (!b.loadFromFile("Data/Boost_Box.png")) {
-            cerr << "Error loading texture!" << endl;
-        }
+    ExtraLife(float x, float y) {
+
+        this->x = x; this->y = y;
+
+        b.loadFromFile("Data/Boost_Box.png");
+        
         a.setTexture(b);
 
-        if (!life.loadFromFile("boost.png")) {
-            cerr << "Error loading extra life icon!" << endl;
-        }
+        life.loadFromFile("Data/boost.png");
         stick.setTexture(life);
 
 		hitbox = Hitbox(x, y, 32, 32);
@@ -148,92 +151,56 @@ public:
 
 class CollectibleFactory {
 private:
-    static const int MAX_COLLECTIBLES = 100;
-    Collectibles* collectibles[MAX_COLLECTIBLES];
-    float usedPositions[MAX_COLLECTIBLES][2]; // Store x,y coordinates
-    int count;
     int gridHeight, gridWidth;
     int levelNum;
 
 public:
-    CollectibleFactory(int collectibleCount, int height = 0, int width = 0, int lvl = 1)
-        : count(0), gridHeight(height), gridWidth(width), levelNum(lvl)
-    {
-        for (int i = 0; i < MAX_COLLECTIBLES; ++i)
-            collectibles[i] = nullptr;
-        cout << "In Collectible Factory\n";
-    }
+    CollectibleFactory(int height, int width, int lvl ): gridHeight(height), gridWidth(width), levelNum(lvl){    }
 
-    ~CollectibleFactory() {
-        clearCollectibles();
-    }
+    ~CollectibleFactory() {   }
 
+    // Create a single collectible
     Collectibles* createCollectible(const char& type, float spawnX, float spawnY) {
-        Collectibles* collectible = nullptr;
 
+        Collectibles* collectible = nullptr;
         switch (type) {
-        case 'R': collectible = new Rings(); break;
-        case 'B': collectible = new Boosts(); break;
-        case 'L': collectible = new ExtraLife(); break;
-            // Add other collectible types as needed
+            case 'r': collectible = new Rings(spawnX, spawnY); break;
+            case 'b': collectible = new Boosts(spawnX, spawnY); break;
+            case 'l': collectible = new ExtraLife(spawnX, spawnY); break;
         }
 
         if (collectible) {
             collectible->setPosition(spawnX, spawnY);
-            cout << "Created " << type << " at (" << spawnX << ", " << spawnY << ")" << endl;
-
-            // Store the position for the created collectible
-            if (count < MAX_COLLECTIBLES) {
-                collectibles[count] = collectible;
-                usedPositions[count][0] = spawnX;
-                usedPositions[count][1] = spawnY;
-                count++;
-            }
         }
 
         return collectible;
     }
 
-    
-    void updateCollectibles(RenderWindow& window, Collectibles* collectible[], int collectibleCount,
+    // Update an array of collectibles
+    void updateCollectibles(RenderWindow& window, Collectibles** collectibles, int collectibleCount,
         float offsetX, float deltaTime, Player* player) {
+
         for (int i = 0; i < collectibleCount; i++) {
-            if (collectible[i]) {
-                // Update the collectible's state
-                collectible[i]->update(deltaTime);
+            if (collectibles[i] != nullptr) {
+               
 
-                //render with scrolling offset
-                collectible[i]->render(window, offsetX);
+                collectibles[i]->update(deltaTime);
 
-                // Check if player collected this item
-                if (collectible[i]->getHitbox().checkCollision(player->getHitbox())) {
+                collectibles[i]->render(window, offsetX);
 
-                    collectible[i]->setCollected(true);
 
-                    // Remove the collectible
-                    delete collectible[i];
-                    collectible[i] = nullptr;
+                if (collectibles[i]->getHitbox().checkCollision(player->getHitbox())) {
+                    collectibles[i]->setCollected(true);
 
-                    // Compact the array (optional)
-                    // This would require updating indices in the main game loop
+                    delete collectibles[i];
+                    collectibles[i] = nullptr;
                 }
+                
+               
             }
         }
-    }
 
-    void clearCollectibles() {
-        for (int i = 0; i < count; i++) {
-            if (collectibles[i]) {
-                delete collectibles[i];
-                collectibles[i] = nullptr;
-            }
-        }
-        count = 0;
-        cout << "All collectibles cleared" << endl;
     }
-
-    int getCount() const { return count; }
-    Collectibles** getAllCollectibles() { return collectibles; }
 };
 
 
