@@ -7,14 +7,8 @@
 #include <SFML/Audio.hpp>
 #include <SFML/Window.hpp>
 
-
-#include "Enemies.h"
-#include "Level.h"
-#include "Obstacles.h"
 #include "Character.h"
-#include "Collectibles.h" 
 #include "BuildLevel.h"
-#include "Hitbox.h"
 
 
 using namespace sf;
@@ -217,6 +211,8 @@ int main()
         window.display();
     }
 
+
+    one.clearAllObjects();
 
 
     return 0;

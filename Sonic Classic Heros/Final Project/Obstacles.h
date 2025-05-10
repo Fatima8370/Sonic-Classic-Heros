@@ -1,18 +1,14 @@
-#pragma once
-
-#include "Level.h"
-#include "BuildLevel.h"
-#include "Character.h"
-#include "Hitbox.h"
-#include "GameEntity.h"
-
+#pragma once    
 
 #include <iostream>
 #include <SFML/Graphics.hpp>
 
+#include "Character.h"
+#include "Hitbox.h"
+#include "GameEntity.h"
+
 using namespace sf;
 using namespace std;
-
 
 /*
 
@@ -228,7 +224,6 @@ public:
     
 };
 
-
 class ObstacleFactory {
 private:
     static const int MAX_OBSTACLES = 500;
@@ -239,7 +234,7 @@ private:
     int levelNum;
 
 public:
-    ObstacleFactory(int obstacleCount, int height , int width , int lvl )
+    ObstacleFactory(int obstacleCount, int height, int width, int lvl)
         : count(0), gridHeight(height), gridWidth(width), levelNum(lvl)
     {
         for (int i = 0; i < MAX_OBSTACLES; ++i)
@@ -305,3 +300,6 @@ public:
     int getCount() const { return count; }
     Obstacles** getAllObstacles() { return obstacles; }
 };
+
+
+

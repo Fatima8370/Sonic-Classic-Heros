@@ -1,11 +1,16 @@
 #pragma once
+
 #include <SFML/Graphics.hpp>
 #include <iostream>
 
 #include "Animations.h"
-#include "GameEntity.h"
+#include "Hitbox.h"
+#include "Character.h"
+
 
 using namespace std;
+using namespace sf;
+
 
 class Collectibles: public GameEntity {
 
@@ -230,3 +235,6 @@ public:
     int getCount() const { return count; }
     Collectibles** getAllCollectibles() { return collectibles; }
 };
+
+
+

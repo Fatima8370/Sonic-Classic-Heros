@@ -318,46 +318,46 @@ public:
         updateHitbox();
     }
 
-    //bool checkBottomCollision(char** grid, const int cell_size, char collisionSymbol, float& outCollisionY) {
-    //    float offsetY = position[1] + velocity[1];
-    //    int bottomLeftY = static_cast<int>((offsetY + hitboxFactorY + playerHeight) / cell_size);
-    //    int bottomLeftX = static_cast<int>((position[0] + hitboxFactorX) / cell_size);
-    //    int bottomMiddleY = static_cast<int>((offsetY + hitboxFactorY + playerHeight) / cell_size);
-    //    int bottomMiddleX = static_cast<int>((position[0] + hitboxFactorX + playerWidth / 2) / cell_size);
-    //    int bottomRightY = static_cast<int>((offsetY + hitboxFactorY + playerHeight) / cell_size);
-    //    int bottomRightX = static_cast<int>((position[0] + hitboxFactorX + playerWidth) / cell_size);
+    bool checkBottomCollision(char** grid, const int cell_size, char collisionSymbol, float& outCollisionY) {
+        float offsetY = position[1] + velocity[1];
+        int bottomLeftY = static_cast<int>((offsetY + hitboxFactorY + playerHeight) / cell_size);
+        int bottomLeftX = static_cast<int>((position[0] + hitboxFactorX) / cell_size);
+        int bottomMiddleY = static_cast<int>((offsetY + hitboxFactorY + playerHeight) / cell_size);
+        int bottomMiddleX = static_cast<int>((position[0] + hitboxFactorX + playerWidth / 2) / cell_size);
+        int bottomRightY = static_cast<int>((offsetY + hitboxFactorY + playerHeight) / cell_size);
+        int bottomRightX = static_cast<int>((position[0] + hitboxFactorX + playerWidth) / cell_size);
 
-    //    const int maxHeight = 14;
-    //    const int maxWidth = 110;
+        const int maxHeight = 14;
+        const int maxWidth = 110;
 
-    //    bool collision = false;
+        bool collision = false;
 
-    //    if (bottomLeftY >= 0 && bottomLeftY < maxHeight && bottomLeftX >= 0 && bottomLeftX < maxWidth) {
-    //        if (grid[bottomLeftY][bottomLeftX] == collisionSymbol) {
-    //            collision = true;
-    //        }
-    //    }
+        if (bottomLeftY >= 0 && bottomLeftY < maxHeight && bottomLeftX >= 0 && bottomLeftX < maxWidth) {
+            if (grid[bottomLeftY][bottomLeftX] == collisionSymbol) {
+                collision = true;
+            }
+        }
 
-    //    if (!collision && bottomMiddleY >= 0 && bottomMiddleY < maxHeight &&
-    //        bottomMiddleX >= 0 && bottomMiddleX < maxWidth) {
-    //        if (grid[bottomMiddleY][bottomMiddleX] == collisionSymbol) {
-    //            collision = true;
-    //        }
-    //    }
+        if (!collision && bottomMiddleY >= 0 && bottomMiddleY < maxHeight &&
+            bottomMiddleX >= 0 && bottomMiddleX < maxWidth) {
+            if (grid[bottomMiddleY][bottomMiddleX] == collisionSymbol) {
+                collision = true;
+            }
+        }
 
-    //    if (!collision && bottomRightY >= 0 && bottomRightY < maxHeight &&
-    //        bottomRightX >= 0 && bottomRightX < maxWidth) {
-    //        if (grid[bottomRightY][bottomRightX] == collisionSymbol) {
-    //            collision = true;
-    //        }
-    //    }
+        if (!collision && bottomRightY >= 0 && bottomRightY < maxHeight &&
+            bottomRightX >= 0 && bottomRightX < maxWidth) {
+            if (grid[bottomRightY][bottomRightX] == collisionSymbol) {
+                collision = true;
+            }
+        }
 
-    //    if (collision) {
-    //        outCollisionY = (bottomLeftY * cell_size) - playerHeight - hitboxFactorY;
-    //    }
+        if (collision) {
+            outCollisionY = (bottomLeftY * cell_size) - playerHeight - hitboxFactorY;
+        }
 
-    //    return collision;
-    //}
+        return collision;
+    }
 
     void applyGravity(char** grid, const int cell_size) {
         // v = v0 + g
@@ -374,7 +374,7 @@ public:
         float offsetY = position[1] + velocity[1];
         float collisionY = 0.0f;
 
-        //bool collision = checkBottomCollision(grid, cell_size, 'w', collisionY);
+        bool collision = checkBottomCollision(grid, cell_size, 'w', collisionY);
 
         /*if (collision) {
             position[1] = collisionY;

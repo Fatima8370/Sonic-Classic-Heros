@@ -1,4 +1,5 @@
 #pragma once
+
 #include <iostream>
 #include <cmath>
 #include <SFML/Graphics.hpp>
@@ -7,13 +8,11 @@
 #include "Hitbox.h"
 #include "Character.h"
 #include "Animations.h"
-#include <cstdlib>
-#include <ctime>
 
 using namespace sf;
 using namespace std;
 
-class Enemies {
+class Enemies: public GameEntity {
 
 protected:
     int hp;
@@ -33,7 +32,6 @@ protected:
     Sound dying;
 
     // Add a hitbox member to the Enemies class
-    Hitbox hitbox;
 
     Animation enemyL;
     Animation enemyR;
@@ -61,6 +59,10 @@ public:
 
     virtual ~Enemies() = default;
 
+    void draw(RenderWindow& window, float directionFaced, float offset) override {}
+
+	void update(char** grid, const int cell_size) override {}
+
     bool detectArea(float playerX, float playerY) const {
         return (x + area >= playerX && x - area <= playerX);
     }
@@ -73,7 +75,7 @@ public:
         }
     }
 
-    virtual void draw(RenderWindow& window, float offset) {
+    virtual void render(RenderWindow& window, float offset) override{
         if (!died) {
             // Update current animation position
             if (currentAnimation) {
@@ -276,7 +278,7 @@ public:
         return bulletHitbox;
     }
 
-    void draw(RenderWindow& window, float offset) override {
+    void render(RenderWindow& window, float offset) override {
         if (!died) {
             // Draw current animation
             if (currentAnimation) {
@@ -547,7 +549,7 @@ public:
         updateProjectiles();
     }
 
-    void draw(RenderWindow& window, float offset) override {
+    void render(RenderWindow& window, float offset) override {
         if (!died) {
             // Draw current animation
             if (currentAnimation) {
@@ -644,7 +646,7 @@ public:
                 enemy[i]->update(playerHitbox.getX(), playerHitbox.getY(), deltaTime);
 
                 // Draw with scrolling offset
-                enemy[i]->draw(window, offsetX);
+                enemy[i]->render(window, offsetX);
 
                 // Handle attack/die logic with hitbox
                 if (attack) {
@@ -689,3 +691,5 @@ public:
     int getCount() const { return count; }
     Enemies** getAllEnemies() { return enemies; }
 };
+
+

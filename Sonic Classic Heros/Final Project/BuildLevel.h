@@ -3,22 +3,15 @@
 #include <iostream>
 #include <fstream>
 #include <string>
+
 #include <SFML/Graphics.hpp>
 #include <SFML/Audio.hpp>
 #include <SFML/Window.hpp>
-#include "Level.h"
-#include "GameEntity.h"
+
 #include "Obstacles.h"
 #include "Enemies.h"
 #include "Collectibles.h"
-
-class ObstacleFactory;
-class EnemyFactory;
-class CollectibleFactory;
-class Obstacles;
-class Enemies;
-class Collectibles;
-class Player;
+#include "Character.h"
 
 
 using namespace std;
@@ -227,9 +220,8 @@ public:
         return true;
     }
 
-    // Create objects from loaded level data
     void createLevelObjects() {
-        // Create factories with the proper parameters
+
         obstacleFactory = new ObstacleFactory(obstacleCount, gridHeight, gridWidth, currentLevel);
         enemyFactory = new EnemyFactory(gridHeight, gridWidth, currentLevel);
         collectibleFactory = new CollectibleFactory(collectibleCount, gridHeight, gridWidth, currentLevel);
@@ -380,7 +372,15 @@ public:
             collectibleFactory->clearCollectibles();
         }
     }
-};/*
+};
+
+
+
+
+
+
+
+/*
 
 
 ObstacleFactory obstacleFactory(MAX_OBSTACLES);
@@ -403,3 +403,7 @@ levelLoader.createLevelObjects(&obstacleFactory, &enemyFactory, &collectibleFact
 
 
 */
+
+
+
+
