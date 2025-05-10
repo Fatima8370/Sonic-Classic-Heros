@@ -4,8 +4,6 @@
 using namespace sf;
 using namespace std;
 
-
-
 class Hitbox {
 
 private:
@@ -15,7 +13,6 @@ private:
     float leftOffset, rightOffset;
     float topOffset, bottomOffset;
 
-
 public:
     Hitbox(float x = 0.0f, float y = 0.0f, float w = 0.0f, float h = 0.0f) :
         x(x), y(y), width(w), height(h) {
@@ -24,108 +21,148 @@ public:
         leftOffset = 0.0f;
         rightOffset = width;
 
-
         cout << "H" << endl;
     }
 
     ~Hitbox() {
         cout << "~H" << endl;
     }
+
     void setOffsets(float t, float b, float l, float r) {
         topOffset = t;
         bottomOffset = b;
         leftOffset = l;
         rightOffset = r;
     }
+
     void updateHitbox(float x, float y) {
         this->x = x;
         this->y = y;
     }
+
     float getX() const { return x; }
     float getY() const { return y; }
     float getWidth() const { return width; }
     float getHeight() const { return height; }
 
+    // Get actual hitbox dimensions with offsets
+    float getLeft() const { return x + leftOffset; }
+    float getRight() const { return x + rightOffset; }
+    float getTop() const { return y + topOffset; }
+    float getBottom() const { return y + bottomOffset; }
+    float getCenterX() const { return getLeft() + (getRight() - getLeft()) / 2; }
+    float getCenterY() const { return getTop() + (getBottom() - getTop()) / 2; }
 
 
-    //object to object ( player and enemies) 
-    bool checkCollision(const Hitbox& other)const {
+    bool checkCollision(const Hitbox& other) const {
+        // Calculate actual hitbox coordinates with offsets for this object
+        float thisLeft = getLeft();
+        float thisRight = getRight();
+        float thisTop = getTop();
+        float thisBottom = getBottom();
 
-        return (x <= other.x + other.width && x + width >= other.x &&
-            y <= other.y + other.height && y + height >= other.y);
+        // Calculate actual hitbox coordinates with offsets for the other object
+        float otherLeft = other.getLeft();
+        float otherRight = other.getRight();
+        float otherTop = other.getTop();
+        float otherBottom = other.getBottom();
+
+        // Check if the actual hitboxes overlap
+        return (thisLeft < otherRight && thisRight > otherLeft &&
+            thisTop < otherBottom && thisBottom > otherTop);
+    }
+
+    bool checkAllSidesCollision(const Hitbox& other) const {
+        return checkCollision(other);
+    }
+
+
+    bool checkTopCollision(const Hitbox& other) const {
+
+        float thisLeft = getLeft();
+        float thisRight = getRight();
+        float thisTop = getTop();
+
+
+        float otherLeft = other.getLeft();
+        float otherRight = other.getRight();
+        float otherTop = other.getTop();
+        float otherBottom = other.getBottom();
+
+        // Create a small hitbox representing just the top edge of this hitbox
+        float topEdgeHeight = 1.0f; // Small height for the top edge
+
+
+        return (thisTop < otherBottom && thisTop + topEdgeHeight > otherTop &&
+            thisLeft < otherRight && thisRight > otherLeft);
+    }
+
+
+    bool checkBottomCollision(const Hitbox& other) const {
+
+        float thisLeft = getLeft();
+        float thisRight = getRight();
+        float thisBottom = getBottom();
+
+
+        float otherLeft = other.getLeft();
+        float otherRight = other.getRight();
+        float otherTop = other.getTop();
+        float otherBottom = other.getBottom();
+
+
+        float bottomEdgeHeight = 1.0f; // Small height for the bottom edge
+
+        // Check if the bottom edge overlaps with the other hitbox
+        return (thisBottom - bottomEdgeHeight < otherBottom && thisBottom > otherTop &&
+            thisLeft < otherRight && thisRight > otherLeft);
+    }
+
+
+    bool checkLeftCollision(const Hitbox& other) const {
+
+        float thisLeft = getLeft();
+        float thisTop = getTop();
+        float thisBottom = getBottom();
+
+
+        float otherLeft = other.getLeft();
+        float otherRight = other.getRight();
+        float otherTop = other.getTop();
+        float otherBottom = other.getBottom();
+
+
+        float leftEdgeWidth = 1.0f; // Small width for the left edge
+
+
+        return (thisLeft < otherRight && thisLeft + leftEdgeWidth > otherLeft &&
+            thisTop < otherBottom && thisBottom > otherTop);
+    }
+
+
+    bool checkRightCollision(const Hitbox& other) const {
+
+        float thisRight = getRight();
+        float thisTop = getTop();
+        float thisBottom = getBottom();
+
+
+        float otherLeft = other.getLeft();
+        float otherRight = other.getRight();
+        float otherTop = other.getTop();
+        float otherBottom = other.getBottom();
+
+
+        float rightEdgeWidth = 1.0f; // Small width for the right edge
+
+
+        return (thisRight - rightEdgeWidth < otherRight && thisRight > otherLeft &&
+            thisTop < otherBottom && thisBottom > otherTop);
     }
 
 
 
-    // for player and game objects ( exlcuding players , enemies ofcourse)
-    bool checkGridCollisions(char** grid, char object, const int cell_size = 64) const {
-        // checking collision at top left right middle 
-        // bottom left right 
-        // middle left right
-
-        //lefts
-        int topLeftX = static_cast<int>((x + leftOffset) / cell_size);
-        int topLeftY = static_cast<int>((y + topOffset) / cell_size);
-        int bottomLeftX = static_cast<int>((x + leftOffset) / cell_size);
-        int bottomLeftY = static_cast<int>((y + bottomOffset) / cell_size);
-        //rights
-        int topRightX = static_cast<int>((x + rightOffset) / cell_size);
-        int topRightY = static_cast<int>((y + topOffset) / cell_size);
-        int bottomRightX = static_cast<int>((x + rightOffset) / cell_size);
-        int bottomRightY = static_cast<int>((y + bottomOffset) / cell_size);
-
-        //middles.
-        int topMiddleX = static_cast<int>((x + width / 2) / cell_size);
-        int topMiddleY = static_cast<int>((y + topOffset) / cell_size);
-
-        int leftMiddleX = static_cast<int>((x + leftOffset) / cell_size);
-        int leftMiddleY = static_cast<int> ((y + height / 2) / cell_size);
-
-        int rightMiddleX = static_cast<int>((x + rightOffset) / cell_size);
-        int rightMiddleY = static_cast<int> ((y + height / 2) / cell_size);
-
-        int bottomMiddleX = static_cast<int>((x + width / 2) / cell_size);
-        int bottomMiddleY = static_cast<int>((y + bottomOffset) / cell_size);
-
-        if (grid[topLeftY][topLeftX] == object || grid[topRightY][topRightX] == object ||
-            grid[bottomLeftY][bottomLeftX] == object || grid[bottomRightY][bottomRightX] == object ||
-
-            grid[leftMiddleX][leftMiddleY] == object || grid[rightMiddleX][rightMiddleY] == object ||
-            grid[bottomMiddleX][bottomMiddleY] == object || grid[topMiddleY][topMiddleX] == object)
-        {
-            return true;
-        }
-        return false;
-    }
-
-
-    //// for the gravity detection
-    //bool checkBottomCollision(char** grid, const int cell_size, char object, const int maxHeight = 14, const int maxWidth = 110) const {
-    //    // Calculate grid positions
-    //    int bottomMiddleX = static_cast<int>((x + width / 2) / cell_size);
-    //    int bottomMiddleY = static_cast<int>((y + height) / cell_size);
-    //    int bottomLeftX = static_cast<int>(x / cell_size);
-    //    int bottomLeftY = static_cast<int>((y + height) / cell_size);
-    //    int bottomRightX = static_cast<int>((x + width) / cell_size);
-    //    int bottomRightY = static_cast<int>((y + height) / cell_size);
-
-    //    // Check bounds before accessing grid
-    //    if (bottomLeftY < 0 || bottomLeftY >= maxHeight || bottomLeftX < 0 || bottomLeftX >= maxWidth ||
-    //        bottomMiddleY < 0 || bottomMiddleY >= maxHeight || bottomMiddleX < 0 || bottomMiddleX >= maxWidth ||
-    //        bottomRightY < 0 || bottomRightY >= maxHeight || bottomRightX < 0 || bottomRightX >= maxWidth) {
-    //        return false;
-    //    }
-
-    //    // Check for collision
-    //    return (grid[bottomLeftY][bottomLeftX] == object ||
-    //        grid[bottomRightY][bottomRightX] == object ||
-    //        grid[bottomMiddleY][bottomMiddleX] == object);
-    //}
-
-
-
-
-    float getTopCollisionPoint(char** grid, const int cell_size, char object, const int maxHeight = 14, const int maxWidth = 110) const {
+    float getTopCollisionPoint(char** grid, const int cell_size, char object, const int maxHeight = 14, const int maxWidth = 300) const {
         // Calculate grid positions
         int topLeftY = static_cast<int>((y + topOffset) / cell_size);
 
@@ -136,7 +173,9 @@ public:
 
         return -1.0f; // No collision detected
     }
-    bool checkTopCollision(char** grid, const int cell_size, char object, const int maxHeight = 14, const int maxWidth = 110) const {
+
+
+    bool checkTopCollision(char** grid, const int cell_size, char object, const int maxHeight = 14, const int maxWidth = 300) const {
         // Calculate grid positions for top collision points
         int topLeftX = static_cast<int>((x + leftOffset) / cell_size);
         int topLeftY = static_cast<int>((y + topOffset) / cell_size);
@@ -160,11 +199,31 @@ public:
 
 
 
+    float getTopCollisionPoint(const Hitbox& other) const {
+        if (checkTopCollision(other)) {
+            return other.getBottom();
+        }
+        return -1.0f; // No collision detected
+    }
+
+    float getBottomCollisionPoint(const Hitbox& other) const {
+        if (checkBottomCollision(other)) {
+            return other.getTop();
+        }
+        return -1.0f; // No collision detected
+    }
+
+    float getLeftCollisionPoint(const Hitbox& other) const {
+        if (checkLeftCollision(other)) {
+            return other.getRight();
+        }
+        return -1.0f; // No collision detected
+    }
+
+    float getRightCollisionPoint(const Hitbox& other) const {
+        if (checkRightCollision(other)) {
+            return other.getLeft();
+        }
+        return -1.0f; // No collision detected
+    }
 };
-
-
-
-
-
-
-
