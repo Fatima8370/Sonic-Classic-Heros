@@ -40,7 +40,8 @@ public:
             backgroundSprite.setTexture(backgroundTexture);
             backgroundSprite.setScale(0.2, 0.2);
 
-            whiteOverlay.setSize(Vector2f(x,y)); 
+            whiteOverlay.setSize(Vector2f(x,y)); // not use vector
+			whiteOverlay.setPosition(0, 0);
             whiteOverlay.setFillColor(Color(255, 255, 255, 100)); 
 
         }

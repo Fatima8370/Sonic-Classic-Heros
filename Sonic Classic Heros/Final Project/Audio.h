@@ -110,7 +110,7 @@ public:
         backgroundSprite.setTexture(backgroundTexture);
         backgroundSprite.setScale(0.2f, 0.2f);
 
-        whiteOverlay.setSize(Vector2f(1200, 900));
+        whiteOverlay.setSize(Vector2f(x, y));
         whiteOverlay.setFillColor(Color(255, 255, 255, 100));
     }
 

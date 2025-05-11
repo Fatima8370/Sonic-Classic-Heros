@@ -23,7 +23,7 @@ public:
 
     }
 
-    ~Hitbox() { }
+    ~Hitbox() {}
 
     void setOffsets(float t, float b, float l, float r) {
         topOffset = t;
@@ -159,20 +159,17 @@ public:
 
 
 
-    float getTopCollisionPoint(char** grid, const int cell_size, char object, const int maxHeight = 14, const int maxWidth = 300) const {
-        // Calculate grid positions
+    float getTopCollisionPoint(char** grid, const int cell_size, const int maxHeight = 14, const int maxWidth = 300) const {
         int topLeftY = static_cast<int>((y + topOffset) / cell_size);
 
-        // If collision occurs, return the bottom edge of the collided cell
-        if (checkTopCollision(grid, cell_size, object, maxHeight, maxWidth)) {
+        if (checkTopCollision(grid, cell_size, maxHeight, maxWidth)) {
             return (topLeftY + 1) * cell_size;
         }
 
         return -1.0f; // No collision detected
     }
 
-
-    bool checkTopCollision(char** grid, const int cell_size, char object, const int maxHeight = 14, const int maxWidth = 300) const {
+    bool checkTopCollision(char** grid, const int cell_size, const int maxHeight = 14, const int maxWidth = 300) const {
         // Calculate grid positions for top collision points
         int topLeftX = static_cast<int>((x + leftOffset) / cell_size);
         int topLeftY = static_cast<int>((y + topOffset) / cell_size);
@@ -180,19 +177,23 @@ public:
         int topMiddleY = static_cast<int>((y + topOffset) / cell_size);
         int topRightX = static_cast<int>((x + rightOffset) / cell_size);
         int topRightY = static_cast<int>((y + topOffset) / cell_size);
-
         // Check bounds before accessing grid
         if (topLeftY < 0 || topLeftY >= maxHeight || topLeftX < 0 || topLeftX >= maxWidth ||
             topMiddleY < 0 || topMiddleY >= maxHeight || topMiddleX < 0 || topMiddleX >= maxWidth ||
             topRightY < 0 || topRightY >= maxHeight || topRightX < 0 || topRightX >= maxWidth) {
             return false;
         }
-
-        // Check for collision with specified object type
-        return (grid[topLeftY][topLeftX] == object ||
-            grid[topMiddleY][topMiddleX] == object ||
-            grid[topRightY][topRightX] == object);
+        // Check for collision with W, T, or P
+        return (grid[topLeftY][topLeftX] == 'W' || grid[topLeftY][topLeftX] == 'T' || grid[topLeftY][topLeftX] == 'P' ||
+            grid[topMiddleY][topMiddleX] == 'W' || grid[topMiddleY][topMiddleX] == 'T' || grid[topMiddleY][topMiddleX] == 'P' ||
+            grid[topRightY][topRightX] == 'W' || grid[topRightY][topRightX] == 'T' || grid[topRightY][topRightX] == 'P');
     }
+
+
+
+
+
+
 
 
 

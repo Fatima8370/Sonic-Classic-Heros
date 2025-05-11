@@ -15,7 +15,6 @@ using namespace sf;
 class Collectibles: public GameEntity {
 
 protected:
-    float x, y; // position
     Texture b;
     Sprite a;  // 32 x 32 px
 
@@ -29,7 +28,7 @@ protected:
     bool isCollected;  // Flag to track if this collectible has been collected
 
 public:
-    Collectibles() : isCollected(false), boxlen(32) { x = 0; y = 0; }
+    Collectibles() : isCollected(false), boxlen(32) { position[0] = 0; position[1] = 0; }
 
     virtual ~Collectibles() {}
 
@@ -46,10 +45,6 @@ public:
 
     virtual void update(float deltaTime) {}
 
-	void setCollected(bool collected) {
-		isCollected = collected;
-	}
-
     void drawHitbox(RenderWindow& window, float offset) {
         RectangleShape hitboxRect;
         hitboxRect.setPosition(hitbox.getX() - offset, hitbox.getY());
@@ -64,12 +59,12 @@ public:
 
         if (!isCollected) {
 
-            a.setPosition(x - offset, y);
+            a.setPosition(position[0] - offset, position[1]);
             window.draw(a);
 
             if (stick.getTexture()) {
-                stick.setPosition(x - offset + (boxlen - 16) / 2,
-                    y + (boxlen - 16) / 2);
+                stick.setPosition(position[0] - offset + (boxlen - 16) / 2,
+                    position[1] + (boxlen - 16) / 2);
                 window.draw(stick);
             }
         }
@@ -80,8 +75,8 @@ public:
     }
 
     void setPosition(int xPos, int yPos) {
-        x = xPos;
-        y = yPos;
+        position[0] = xPos;
+        position[1] = yPos;
     }
 
 
@@ -96,18 +91,18 @@ class Rings : public Collectibles {
 public:
     Rings(float x , float y) {
 
-		this->x = x; this->y = y;
+		position[0] = x; position[1] = y;
 
         text.loadFromFile("Data/rings.png");
          
-		collect = Animation(text, 128, 32, 4, 0.01f);
+		collect = Animation(text, 128, 32, 4, 0.05f);
 
 		hitbox = Hitbox(x, y, 32, 32);
     }
 
     void render(RenderWindow& window, float offset) override {
         if (!isCollected) {
-			collect.setPosition(x - offset, y);
+			collect.setPosition(position[0] - offset, position[1]);
             collect.draw(window);
             //drawHitbox(window, offset);
 			collect.update(0.025f); // Update the animation
@@ -119,7 +114,7 @@ class Boosts : public Collectibles {
 public:
     Boosts(float x, float y) {
 
-        this->x = x; this->y = y;
+        position[0] = x; position[1] = y;
 
         b.loadFromFile("Data/Boost_Box.png");
         a.setTexture(b);
@@ -135,7 +130,7 @@ class ExtraLife : public Collectibles {
 public:
     ExtraLife(float x, float y) {
 
-        this->x = x; this->y = y;
+        position[0] = x; position[1] = y;
 
         b.loadFromFile("Data/Boost_Box.png");
         
@@ -190,7 +185,7 @@ public:
 
 
                 if (collectibles[i]->getHitbox().checkCollision(player->getHitbox())) {
-                    collectibles[i]->setCollected(true);
+                    collectibles[i]->collect();
 
                     delete collectibles[i];
                     collectibles[i] = nullptr;

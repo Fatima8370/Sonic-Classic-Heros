@@ -5,9 +5,11 @@
 #include <SFML/Graphics.hpp>
 #include <SFML/Window.hpp>
 #include <SFML/Audio.hpp>
+
 #include "Hitbox.h"
 #include "Character.h"
 #include "Animations.h"
+#include "GameEntity.h"
 
 using namespace sf;
 using namespace std;
@@ -17,7 +19,6 @@ class Enemies : public GameEntity {
 protected:
     int hp;
     bool active;
-    float x, y;
     float initialX, initialY;
     float speed = 3.0f;
     const float area;
@@ -40,11 +41,11 @@ public:
     Enemies() : area(500.0f), active(true), died(false) {
         initialX = 1200.0f;
         initialY = 600.0f;
-        x = initialX;
-        y = initialY;
+        position[0] = initialX;
+        position[1] = initialY;
 
         // Initialize the hitbox
-        hitbox = Hitbox(x, y, 50.0f, 50.0f);
+        hitbox = Hitbox(position[0], position[1], 50.0f, 50.0f);
 
         sound.loadFromFile("Data/sounds/punch.wav");
 
@@ -63,7 +64,7 @@ public:
     void update(char** grid, const int cell_size) override {}
 
     bool detectArea(float playerX, float playerY) const {
-        return (x + area >= playerX && x - area <= playerX);
+        return (position[0] + area >= playerX && position[0] - area <= playerX);
     }
 
     // Updated to use hitbox collision
@@ -78,7 +79,7 @@ public:
         if (!died) {
             // Update current animation position
             if (currentAnimation) {
-                currentAnimation->setPosition(x - offset, y);
+                currentAnimation->setPosition(position[0] - offset, position[1]);
                 currentAnimation->draw(window);
             }
 
@@ -96,6 +97,13 @@ public:
         window.draw(hitboxRect);
     }
 
+
+//===========================================================================
+// UPDATE & GAME LOGIC METHODS
+//===========================================================================
+
+
+
     // Modified to handle all enemy types in one common method
     virtual void update(float playerX, float playerY, float deltaTime) {
         // Update animation based on direction
@@ -112,17 +120,17 @@ public:
         }
 
         // Update hitbox position to match enemy position
-        hitbox.updateHitbox(x, y);
+        hitbox.updateHitbox(position[0], position[1]);
     }
 
     void setPosition(float newX, float newY) {
-        x = newX;
-        y = newY;
+        position[0] = newX;
+        position[1] = newY;
         initialX = newX;
         initialY = newY;
 
         // Update hitbox position
-        hitbox.updateHitbox(x, y);
+        hitbox.updateHitbox(position[0], position[1]);
     }
 
     // Getter for the hitbox object
@@ -130,8 +138,8 @@ public:
         return hitbox;
     }
 
-    float getX() const { return x; }
-    float getY() const { return y; }
+    float getX() const { return position[0]; }
+    float getY() const { return position[1]; }
     bool isDead() const { return died; }
 };
 
@@ -139,7 +147,7 @@ class FollowingType : public Enemies {
 public:
     FollowingType() {
         // Customize hitbox size for following type enemies
-        hitbox = Hitbox(x, y, 50.0f, 50.0f);
+        hitbox = Hitbox(position[0], position[1], 50.0f, 50.0f);
     }
 
     void update(float playerX, float playerY, float deltaTime) override {
@@ -150,8 +158,8 @@ public:
         }
         else {
             // Return to initial position but stay visible
-            x = initialX;
-            y = initialY;
+            position[0] = initialX;
+            position[1] = initialY;
         }
 
         // Update animation based on direction
@@ -168,16 +176,16 @@ public:
         }
 
         // Update hitbox position
-        hitbox.updateHitbox(x, y);
+        hitbox.updateHitbox(position[0], position[1]);
     }
 
     void followPlayer(float playerX) {
-        if (playerX > x) {
-            x += abs(speed);
+        if (playerX > position[0]) {
+            position[0] += abs(speed);
             speed = abs(speed); // Positive speed means moving right
         }
         else {
-            x -= abs(speed);
+            position[0] -= abs(speed);
             speed = -abs(speed); // Negative speed means moving left
         }
     }
@@ -193,7 +201,7 @@ public:
         enemyR = Animation(right, 551, 64, 9, 0.1f);
 
         // Customize hitbox for BatBrain
-        hitbox = Hitbox(x, y, 64.0f, 64.0f);
+        hitbox = Hitbox(position[0], position[1], 64.0f, 64.0f);
 
         // Set default animation
         currentAnimation = &enemyR;
@@ -202,11 +210,11 @@ public:
     // Override the die method to use hitbox
     void die(const Hitbox& playerHitbox) override {
         if (hitbox.checkCollision(playerHitbox) && !died) {
-            cout << "BatBrain ded " << x << ' ' << y << "\n";
+            cout << "BatBrain ded " << position[0] << ' ' << position[1] << "\n";
 
             dying.play();
             died = true;
-            x = 0; y = 0;
+            position[0] = 0; position[1] = 0;
         }
     }
 };
@@ -221,7 +229,7 @@ public:
         enemyR = Animation(right, 444, 64, 5, 0.1f);
 
         // Customize hitbox for Motobug (typically wider and shorter)
-        hitbox = Hitbox(x, y, 91.0f, 64.0f);
+        hitbox = Hitbox(position[0], position[1], 91.0f, 64.0f);
 
         // Set default animation
         currentAnimation = &enemyR;
@@ -229,11 +237,11 @@ public:
 
     void die(const Hitbox& playerHitbox) override {
         if (hitbox.checkCollision(playerHitbox) && !died) {
-            cout << "Motobug ded " << x << ' ' << y << "\n";
+            cout << "Motobug ded " << position[0] << ' ' << position[1] << "\n";
 
             dying.play();
             died = true;
-            x = 0; y = 0;
+            position[0] = 0; position[1] = 0;
         }
     }
 };
@@ -265,10 +273,10 @@ public:
         // Initialize bullet hitbox (small size for projectile)
         bulletHitbox = Hitbox(0, 0, 16.0f, 16.0f);
 
-        y -= 200;
+        position[1] -= 200;
 
         // Customize hitbox for shooting type enemies
-        hitbox = Hitbox(x, y, 50.0f, 50.0f);
+        hitbox = Hitbox(position[0], position[1], 50.0f, 50.0f);
     }
 
     Hitbox& getBulletHitbox() {
@@ -279,7 +287,7 @@ public:
         if (!died) {
             // Draw current animation
             if (currentAnimation) {
-                currentAnimation->setPosition(x - offset, y);
+                currentAnimation->setPosition(position[0] - offset, position[1]);
                 currentAnimation->draw(window);
             }
 
@@ -310,14 +318,14 @@ public:
     void update(float playerX, float playerY, float deltaTime) override {
         if (detectArea(playerX, playerY) && !died) {
             // Movement
-            float dx = playerX - x;
+            float dx = playerX - position[0];
             if (abs(dx) > 200.0f) {
                 if (dx > 0) {
-                    x += abs(speed);
+                    position[0] += abs(speed);
                     speed = abs(speed); // Moving right
                 }
                 else {
-                    x -= abs(speed);
+                    position[0] -= abs(speed);
                     speed = -abs(speed); // Moving left
                 }
             }
@@ -347,7 +355,7 @@ public:
         }
 
         // Update enemy hitbox
-        hitbox.updateHitbox(x, y);
+        hitbox.updateHitbox(position[0], position[1]);
 
         updateProjectiles();
     }
@@ -361,7 +369,7 @@ public:
             // Update bullet hitbox
             bulletHitbox.updateHitbox(bulletX, bulletY);
 
-            if (bulletX < x - area || bulletX > x + area || bulletY < 0 || bulletY > 1000)
+            if (bulletX < position[0] - area || bulletX > position[0] + area || bulletY < 0 || bulletY > 1000)
                 bulletActive = false;
         }
     }
@@ -378,17 +386,17 @@ public:
         if (!bulletActive) {
             cout << "Shooting projectile\n";
 
-            bulletX = x;
-            bulletY = y;
+            bulletX = position[0];
+            bulletY = position[1];
 
-            float dx = playerX - x;
-            float dy = playerY - y;
+            float dx = playerX - position[0];
+            float dy = playerY - position[1];
             float length = sqrt(dx * dx + dy * dy);
 
             bulletDX = 6.0f * dx / length;
             bulletDY = 8.0f * dy / length;
 
-            bulletSprite.setPosition(x, y);
+            bulletSprite.setPosition(position[0], position[1]);
             bulletActive = true;
 
             // Reset bullet hitbox position
@@ -409,18 +417,18 @@ public:
         // Set default animation
         currentAnimation = &enemyR;
 
-        y -= 150;
+        position[1] -= 150;
 
-        hitbox = Hitbox(x, y, 96.0f, 64.0f);
+        hitbox = Hitbox(position[0], position[1], 96.0f, 64.0f);
     }
 
     void die(const Hitbox& playerHitbox) override {
         if (hitbox.checkCollision(playerHitbox) && !died) {
-            cout << "BeeBot ded " << x << ' ' << y << "\n";
+            cout << "BeeBot ded " << position[1] << ' ' << position[1] << "\n";
 
             dying.play();
             died = true;
-            x = 0; y = 0;
+            position[0] = 0; position[1] = 0;
         }
     }
 };
@@ -438,16 +446,16 @@ public:
         currentAnimation = &enemyR;
 
         // Customize hitbox for CrabMeat 
-        hitbox = Hitbox(x, y, 102.0f, 64.0f);
+        hitbox = Hitbox(position[0], position[1], 102.0f, 64.0f);
     }
 
     void die(const Hitbox& playerHitbox) override {
         if (hitbox.checkCollision(playerHitbox) && !died) {
-            cout << "CrabMeat ded at position " << x << ' ' << y << "\n";
+            cout << "CrabMeat ded at position " << position[0] << ' ' << position[1] << "\n";
 
             dying.play();
             died = true;
-            x = 0; y = 0;
+            position[0] = 0; position[1] = 0;
         }
     }
 };
@@ -479,11 +487,11 @@ public:
         // Set default animation
         currentAnimation = &enemyR;
 
-        y = hoverHeight;
+        position[1] = hoverHeight;
         active = true;
 
         // Customize hitbox for EggStinger boss (larger hitbox)
-        hitbox = Hitbox(x, y, 128.0f, 128.0f);
+        hitbox = Hitbox(position[0], position[1], 128.0f, 128.0f);
     }
 
     void update(float playerX, float playerY, float deltaTime) override {
@@ -491,13 +499,13 @@ public:
             flightTimer += deltaTime;
 
             // Hover left-to-right
-            x += speed * 2 * deltaTime;
+            position[0] += speed * 2 * deltaTime;
 
             // Change direction when reaching limits
-            if (x < initialX - 600) {
+            if (position[0] < initialX - 600) {
                 speed = abs(speed); // Change direction to right
             }
-            else if (x > initialX + 600) {
+            else if (position[0] > initialX + 600) {
                 speed = -abs(speed); // Change direction to left
             }
 
@@ -517,18 +525,18 @@ public:
             }
 
             if (descending) {
-                y += descendSpeed;
-                if (y >= targetY) {
-                    y = targetY;
+                position[1] += descendSpeed;
+                if (position[1] >= targetY) {
+                    position[1] = targetY;
                     descending = false;
                     ascending = true;
                     // Optional: destroy block here
                 }
             }
             else if (ascending) {
-                y -= descendSpeed;
-                if (y <= hoverHeight) {
-                    y = hoverHeight;
+                position[1] -= descendSpeed;
+                if (position[1] <= hoverHeight) {
+                    position[1] = hoverHeight;
                     ascending = false;
                 }
             }
@@ -539,7 +547,7 @@ public:
             }
 
             // Update hitbox position
-            hitbox.updateHitbox(x, y);
+            hitbox.updateHitbox(position[0], position[1]);
         }
 
         updateProjectiles();
@@ -549,7 +557,7 @@ public:
         if (!died) {
             // Draw current animation
             if (currentAnimation) {
-                currentAnimation->setPosition(x - offset, y);
+                currentAnimation->setPosition(position[0] - offset, position[1]);
                 currentAnimation->draw(window);
             }
 

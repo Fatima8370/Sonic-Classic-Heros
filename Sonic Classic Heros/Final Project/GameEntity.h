@@ -5,45 +5,49 @@
 #include <SFML/Window.hpp>
 
 #include "Hitbox.h"
-
-
+#include "Level.h"
 
 
 class GameEntity {
 
 protected:
+
+	Level* level;
+
 	float position[2];
 	char symbol;
 	Hitbox hitbox;
 
+	int lvlNum;
 
 	const int cell_size = 64;
 
 public:
-	GameEntity(float x = 0.0f, float y = 0.0f, char s = ' ') : symbol(s) {
-		position[0] = 64*20;
-		position[1] = 64*7;
+	GameEntity(float x = 0.0f, float y = 0.0f, char s = ' ') : symbol(s), level(nullptr) {
+
+		position[0] = 64 * 20;
+		position[1] = 64 * 7;
 
 		hitbox = Hitbox(x, y, 0, 0);
 	}
 
-	virtual ~GameEntity() {	}
+	virtual ~GameEntity() {}
 
 
 
 	//virtual -> virtual override -> override 
-	virtual void draw(RenderWindow& window, float directionFaced , float offsetX ) = 0;
+	virtual void draw(RenderWindow& window, float directionFaced, float offsetX) = 0;
 
+	virtual void update(char** grid, const int cell_size) = 0 {};
 
-	// add position[0] - offset
-	virtual void update(char** grid, const int cell_size) = 0{};
-
-	virtual bool checkCollision(const GameEntity& other) const {
+	/*virtual bool checkCollision(const GameEntity& other) const {
 		return hitbox.checkCollision(other.hitbox);
-	}
+	}*/
 
 	char getSymbol() const { return symbol; }
 	void setSymbol(char s) { this->symbol = s; }
+
+	int getLevelNum() { return lvlNum; }
 
 	virtual void render(RenderWindow& window, float offset) = 0;
 

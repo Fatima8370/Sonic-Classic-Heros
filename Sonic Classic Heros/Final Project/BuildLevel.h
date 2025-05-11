@@ -11,13 +11,15 @@
 #include "Obstacles.h"
 #include "Enemies.h"
 #include "Collectibles.h"
-#include "Character.h"
 
 using namespace std;
 using namespace sf;
 
 class BuildLevel {
 private:
+
+    Level* level;
+
     // Factories - now only create entities, don't store them
     EnemyFactory* enemyFactory;
     CollectibleFactory* collectibleFactory;
@@ -176,12 +178,24 @@ public:
         enemyLayout(nullptr),
         collectibleLayout(nullptr),
         obstacleLayout(nullptr),
-        levelGrid(nullptr)
+        levelGrid(nullptr),
+        level(nullptr)
     {
     }
 
     ~BuildLevel() {
         cleanup();
+    }
+
+
+
+    Level* generateLevel(int width, int height, int levelNum) {
+        if (level) {
+            delete level;  // Clean up previous level if exists
+        }
+        level = new Level(width, height, levelNum);
+        level->loadLevel();
+        return level;
     }
 
     void cleanup() {
@@ -392,5 +406,14 @@ public:
     char** getEnemyLayout() { return enemyLayout; }
     char** getObstacleLayout() { return obstacleLayout; }
     char** getCollectiblesLayout() { return collectibleLayout; }
+
+	EnemyFactory* getEnemyFactory() { return enemyFactory; }
+	CollectibleFactory* getCollectibleFactory() { return collectibleFactory; }
+	ObstacleFactory* getObstacleFactory() { return obstacleFactory; }
+
+	int getHeight() const { return height; }
+	int getWidth() const { return width; }
+
+	Level* getLevel() { return level; }
 };
 
