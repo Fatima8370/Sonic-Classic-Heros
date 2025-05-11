@@ -211,7 +211,7 @@ public:
 
             dying.play();
             died = true;
-            position[0] = 0; position[1] = 0;
+           // position[0] = 0; position[1] = 0;
         }
     }
 };
@@ -238,7 +238,7 @@ public:
 
             dying.play();
             died = true;
-            position[0] = 0; position[1] = 0;
+            //position[0] = 0; position[1] = 0;
         }
     }
 };
@@ -425,7 +425,7 @@ public:
 
             dying.play();
             died = true;
-            position[0] = 0; position[1] = 0;
+           // position[0] = 0; position[1] = 0;
         }
     }
 };
@@ -452,58 +452,47 @@ public:
 
             dying.play();
             died = true;
-            position[0] = 0; position[1] = 0;
+           // position[0] = 0; position[1] = 0;
         }
     }
 };
 
 class EggStinger : public ShootingType {
 private:
-    float flightTimer;
-    float attackInterval;
-    bool descending;
-    bool ascending;
-    float targetY;
-    float hoverHeight;
-    float descendSpeed;
-    float groundY;
+    int hp;
 
 public:
-    EggStinger()
-        : flightTimer(0), attackInterval(8.0f), descending(false), ascending(false),
-        hoverHeight(150.0f), descendSpeed(5.0f), groundY(800.0f) {
-
+    EggStinger() {
         initialX = 600; initialY = 600;
-
         left.loadFromFile("Data/Enemy/eggstingerL.png");
         right.loadFromFile("Data/Enemy/eggstingerR.png");
-
-        enemyL = Animation(left, 64, 64, 1, 0.1f);
-        enemyR = Animation(right, 64, 64, 1, 0.1f);
-
+        enemyL = Animation(left, 128, 128, 1, 0.1f);
+        enemyR = Animation(right, 128, 128, 1, 0.1f);
         // Set default animation
         currentAnimation = &enemyR;
-
-        position[1] = hoverHeight;
+        position[0] = initialX; // Start at initial X position
+        position[1] = 150.0f;   // Fixed hover height
         active = true;
-
+        hp = 20; // Set boss HP to 20
+        // Initialize speed for left-right movement
+        speed = 100.0f; // Adjust this value for desired speed
         // Customize hitbox for EggStinger boss (larger hitbox)
         hitbox = Hitbox(position[0], position[1], 128.0f, 128.0f);
     }
 
     void update(float playerX, float playerY, float deltaTime) override {
         if (!died) {
-            flightTimer += deltaTime;
-
             // Hover left-to-right
-            position[0] += speed * 2 * deltaTime;
+            position[0] += speed *5* deltaTime;
 
             // Change direction when reaching limits
             if (position[0] < initialX - 600) {
                 speed = abs(speed); // Change direction to right
+                currentAnimation = &enemyR;
             }
             else if (position[0] > initialX + 600) {
                 speed = -abs(speed); // Change direction to left
+                currentAnimation = &enemyL;
             }
 
             // Update animation based on direction
@@ -512,30 +501,6 @@ public:
             }
             else {
                 currentAnimation = &enemyR;
-            }
-
-            if (!descending && !ascending && flightTimer >= attackInterval) {
-                // Start dive
-                descending = true;
-                flightTimer = 0;
-                targetY = groundY;
-            }
-
-            if (descending) {
-                position[1] += descendSpeed;
-                if (position[1] >= targetY) {
-                    position[1] = targetY;
-                    descending = false;
-                    ascending = true;
-                    // Optional: destroy block here
-                }
-            }
-            else if (ascending) {
-                position[1] -= descendSpeed;
-                if (position[1] <= hoverHeight) {
-                    position[1] = hoverHeight;
-                    ascending = false;
-                }
             }
 
             // Update animation frames
@@ -573,15 +538,19 @@ public:
 
     void die(const Hitbox& playerHitbox) override {
         if (hitbox.checkCollision(playerHitbox) && !died) {
-            cout << "EggStinger Neutralized\n";
-            dying.play();
-            died = true;
+            hp--;
+            cout << "EggStinger hit: " << (20 - hp) << "/20\n";
+
+            // Add invincibility frames or knockback here if needed
+
+            if (hp <= 0) {
+                cout << "EggStinger Neutralized\n";
+                dying.play();
+                died = true;
+            }
         }
     }
 };
-
-// Refactored Factory Classes
-
 class EnemyFactory {
 private:
     int gridHeight, gridWidth;

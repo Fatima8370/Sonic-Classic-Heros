@@ -74,11 +74,11 @@ private:
             width = 200;
         }
         else if (levelNum == 2) {
-            height = 16;
+            height = 14;
             width = 250;
         }
         else if (levelNum == 3) {
-            height = 18;
+            height = 14;
             width = 300;
         }
         else {
@@ -255,6 +255,8 @@ public:
 
     void update(RenderWindow& window, float offsetX, float deltaTime, Player* player) {
         // Update all entities using the entity factory
+
+        cout << "In buildLevel Update\n";
         if (entityFactory) {
             entityFactory->updateEntities(window, offsetX, deltaTime, player);
         }

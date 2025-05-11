@@ -225,6 +225,7 @@ public:
     // Update all entities
     void updateEntities(RenderWindow& window, float offsetX, float deltaTime, Player* player) {
         // Update enemies
+        cout << "In Entity FActory Upadte\n";
         if (enemyFactory && enemies) {
             enemyFactory->updateEnemies(window, enemies, enemyCount, offsetX, deltaTime, player);
         }

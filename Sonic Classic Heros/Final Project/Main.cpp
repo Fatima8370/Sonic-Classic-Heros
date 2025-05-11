@@ -17,9 +17,6 @@
 //float screen_x = 1280;
 //float screen_y = 896;
 //
-//// prototypes 
-//
-//
 //int main()
 //{
 //    RenderWindow window(VideoMode(screen_x, screen_y), "Sonic the Hedgehog-OOP", Style::Close);
@@ -44,16 +41,15 @@
 //    for (int i = 0; i < 3; i++) {
 //        Player* player = factory.getPlayer(i);
 //        if (player) {
-//            // Make sure hitboxes are initialized
+//
 //            player->updateHitbox();
 //        }
 //    }
 //
-//    // Main character is active player
 //    Player* activePlayer = factory.getActivePlayer();
 //
 //    BuildLevel level;
-//    level.loadLevel(1);
+//    level.loadLevel(2);
 //
 //    Clock clock;
 //
@@ -102,7 +98,7 @@
 //        if (directionX != 0.0f) {
 //            activePlayer->move(directionX, width);
 //        }
-//        // Handle jumping
+//
 //        if (Keyboard::isKeyPressed(Keyboard::Space)) {
 //            activePlayer->jump();
 //        }
@@ -133,7 +129,6 @@
 //        factory.update(level.getObstacleLayout(), 64);
 //
 //		
-//		//display_level(window, height, width, lvl, wallSprite1, wallSprite2, cell_size, offsetX);
 //
 //
 //        window.display();

@@ -1,4 +1,3 @@
-// Level.h
 #pragma once
 
 #include <SFML/Graphics.hpp>
@@ -7,125 +6,110 @@
 #include "BuildLevel.h"
 #include "Character.h"
 
-using namespace std;
 using namespace sf;
+using namespace std;
 
 class Level {
 private:
-    // Level state
-    int timer;                // Level timer in seconds
-    int scoreCounter;         // Current score
-    bool isPaused;            // Is level paused
-    bool isComplete;          // Is level completed
-    bool isGameOver;          // Is game over
+    //===========================================================================
+    // LEVEL PROPERTIES & STATE
+    //===========================================================================
+    int timer;
+    int scoreCounter;
+    bool isPaused;
+    bool isComplete;
+    bool isGameOver;
 
-    // Level properties
-    int levelWidth;           // Level width in cells
-    int levelHeight;          // Level height in cells
-    char** grid;              // Level grid representation
-    float gravity;            // Level-specific gravity
-    float friction;           // Level-specific friction
+    int levelWidth;
+    int levelHeight;
+    float gravity;
+    float friction;
+    float timeLimit;
 
-    // Level mechanics
-    float timeLimit;          // Time limit in seconds
-    int ringCount;            // Current collected rings
-    int totalRingCount;       // Total available rings
+    int ringCount;
+    int totalRingCount;
+    int levelNum;
 
-    // Entity management
-    BuildLevel* buildLevel;   // Manages level entities
-    PlayerFactory* playerFactory; // Manages player characters
+    //===========================================================================
+    // ENTITY MANAGEMENT
+    //===========================================================================
+    BuildLevel* buildLevel;
+    PlayerFactory* playerFactory;
 
-    // Level assets
+    //===========================================================================
+    // ASSETS & UI ELEMENTS
+    //===========================================================================
     Texture backgroundTexture;
-    Sprite backgroundSprite;
-    Font font;                // For UI elements
+    Sprite  backgroundSprite;
+    Font    font;
 
-    // UI elements
     Text scoreText;
     Text timerText;
     Text livesText;
     Text ringsText;
 
-	int levelNum;            // Current level number
-
 public:
-    Level(float screen_x =0, float screen_y = 0, int lvl = 0) :
-        timer(0),
-        scoreCounter(0),
-        isPaused(false),
-        isComplete(false),
-        isGameOver(false),
-        levelWidth(0),
-        levelHeight(0),
-        grid(nullptr),
-        gravity(0.98f),
-        friction(0.1f),
-        timeLimit(180.0f),     // 3 minutes default
-        ringCount(0),
-        totalRingCount(0),
-        buildLevel(nullptr),
-        playerFactory(nullptr),
-		levelNum(lvl) { // Initialize level number
-    
+    //===========================================================================
+    // CONSTRUCTOR & DESTRUCTOR
+    //===========================================================================
+    Level(int lvl = 0)
+        : timer(0), scoreCounter(0), isPaused(false), isComplete(false), isGameOver(false),
+        levelWidth(0), levelHeight(0), gravity(0.98f), friction(0.1f), timeLimit(180.0f),
+        ringCount(0), totalRingCount(0), buildLevel(nullptr), playerFactory(nullptr), levelNum(lvl)
+    {
         buildLevel = new BuildLevel();
-
-        // Load font for UI elements
         font.loadFromFile("OOP-Final/SyneMono-Regular.ttf");
-
-        // Initialize UI texts
         setupUIElements();
+
+        // If a level was specified, load it immediately
+        if (lvl > 0) {
+            loadLevel(lvl);
+        }
     }
 
     ~Level() {
-        // Clean up grid
-        if (grid) {
-            for (int i = 0; i < levelHeight; ++i) {
-                delete[] grid[i];
-            }
-            delete[] grid;
-            grid = nullptr;
-        }
+        cleanup();
+    }
 
-        // Clean up BuildLevel
+    // Clean up resources properly
+    void cleanup() {
         if (buildLevel) {
             delete buildLevel;
             buildLevel = nullptr;
         }
 
-        // We don't delete playerFactory as it's owned by GameEngine
+        // Don't delete playerFactory as it's managed externally
         playerFactory = nullptr;
     }
 
-    // Initialize UI elements
+    //===========================================================================
+    // UI SETUP
+    //===========================================================================
     void setupUIElements() {
-        // Score text
-        scoreText.setFont(font);
-        scoreText.setCharacterSize(20);
-        scoreText.setFillColor(Color::White);
-        scoreText.setPosition(20, 20);
-
-        // Timer text
-        timerText.setFont(font);
-        timerText.setCharacterSize(20);
-        timerText.setFillColor(Color::White);
-        timerText.setPosition(20, 50);
-
-        // Lives text
-        livesText.setFont(font);
-        livesText.setCharacterSize(20);
-        livesText.setFillColor(Color::White);
-        livesText.setPosition(20, 80);
-
-        // Rings text
-        ringsText.setFont(font);
-        ringsText.setCharacterSize(20);
-        ringsText.setFillColor(Color::Yellow);
-        ringsText.setPosition(20, 110);
+        scoreText.setFont(font); scoreText.setCharacterSize(20); scoreText.setFillColor(Color::White); scoreText.setPosition(20, 20);
+        timerText.setFont(font); timerText.setCharacterSize(20); timerText.setFillColor(Color::White); timerText.setPosition(20, 50);
+        livesText.setFont(font); livesText.setCharacterSize(20); livesText.setFillColor(Color::White); livesText.setPosition(20, 80);
+        ringsText.setFont(font); ringsText.setCharacterSize(20); ringsText.setFillColor(Color::Yellow); ringsText.setPosition(20, 110);
     }
 
-    // Load a specific level
-    bool loadLevel(int levelNum) {
+    //===========================================================================
+    // LEVEL LOADING & SETUP
+    //===========================================================================
+    bool loadBackground(const string& filename) {
+        if (!backgroundTexture.loadFromFile(filename)) {
+            cerr << "Failed to load background: " << filename << endl;
+            return false;
+        }
+        backgroundSprite.setTexture(backgroundTexture);
+        float sx = 1280.0f / backgroundTexture.getSize().x;
+        float sy = 896.0f / backgroundTexture.getSize().y;
+        backgroundSprite.setScale(sx, sy);
+        return true;
+    }
+
+    bool loadLevel(int lvl) {
         // Reset level state
+        levelNum = lvl;
         timer = 0;
         scoreCounter = 0;
         isPaused = false;
@@ -133,350 +117,347 @@ public:
         isGameOver = false;
         ringCount = 0;
 
-        // Set level parameters based on level number
-        switch (levelNum) {
-        case 1: // Labyrinth Zone
+        // Configure level parameters based on level number
+        switch (lvl) {
+        case 1:
             levelWidth = 200;
             levelHeight = 14;
             gravity = 2.0f;
             friction = 0.1f;
-            timeLimit = 180.0f; // 3 minutes
+            timeLimit = 180.0f;
             loadBackground("Data/Backgrounds/labyrinth_bg.png");
             break;
-
-        case 2: // Ice Cap Zone
+        case 2:
             levelWidth = 250;
             levelHeight = 16;
             gravity = 2.0f;
-            friction = 0.05f; // More slippery
-            timeLimit = 210.0f; // 3.5 minutes
+            friction = 0.05f;
+            timeLimit = 210.0f;
             loadBackground("Data/Backgrounds/icecap_bg.png");
             break;
-
-        case 3: // Death Egg Zone
+        case 3:
             levelWidth = 300;
             levelHeight = 18;
-            gravity = 1.0f; // Lower gravity
+            gravity = 1.0f;
             friction = 0.1f;
-            timeLimit = 240.0f; // 4 minutes
+            timeLimit = 240.0f;
             loadBackground("Data/Backgrounds/deathegg_bg.png");
             break;
-
-        case 4: // Boss Level
+        case 4:
             levelWidth = 30;
             levelHeight = 14;
             gravity = 2.0f;
             friction = 0.1f;
-            timeLimit = 120.0f; // 2 minutes
+            timeLimit = 120.0f;
             loadBackground("Data/Backgrounds/boss_bg.png");
             break;
-
         default:
-            cout << "Invalid level number: " << levelNum << endl;
+            cerr << "Invalid level: " << lvl << endl;
             return false;
         }
 
-        // Clean up old grid if exists
-        if (grid) {
-            for (int i = 0; i < levelHeight; ++i) {
-                delete[] grid[i];
-            }
-            delete[] grid;
+        // Ensure we have a clean BuildLevel instance
+        if (buildLevel) {
+            delete buildLevel;
         }
+        buildLevel = new BuildLevel();
 
-        // Initialize new grid
-        grid = new char* [levelHeight];
-        for (int i = 0; i < levelHeight; ++i) {
-            grid[i] = new char[levelWidth];
-            for (int j = 0; j < levelWidth; ++j) {
-                grid[i][j] = ' ';  // Default empty cell
-            }
-        }
-
-        // Load level through BuildLevel
-        bool success = buildLevel->loadLevel(levelNum);
-
-        if (success) {
-            // Update level grid from BuildLevel
-            char** levelGrid = buildLevel->getLevelGrid();
-            if (levelGrid) {
-                for (int i = 0; i < levelHeight; ++i) {
-                    for (int j = 0; j < levelWidth; ++j) {
-                        if (i < buildLevel->getHeight() && j < buildLevel->getWidth()) {
-                            grid[i][j] = levelGrid[i][j];
-                        }
-                    }
-                }
-            }
-
-            // Count total rings
-            totalRingCount = 0;
-            Collectibles** collectibles = buildLevel->getCollectibles();
-            if (collectibles) {
-                for (int i = 0; i < buildLevel->getCollectibleCount(); i++) {
-                    if (collectibles[i] && collectibles[i]->getSymbol() == 'r') {
-                        totalRingCount++;
-                    }
-                }
-            }
-
-            // Set BuildLevel's PlayerFactory
-            if (playerFactory) {
-                buildLevel->setPlayerFactory(playerFactory);
-
-                // Apply level physics to all players
-                for (int i = 0; i < 3; i++) {
-                    Player* player = playerFactory->getPlayer(i);
-                    if (player) {
-                        player->setGravity(gravity);
-                        // Set grid width for boundary checking
-                        player->setGridWidth(levelWidth);
-                    }
-                }
-            }
-
-            cout << "Level " << levelNum << " loaded successfully with " << totalRingCount << " rings." << endl;
-            return true;
-        }
-        else {
-            cout << "Failed to load level " << levelNum << "." << endl;
+        // Load the level data
+        if (!buildLevel->loadLevel(lvl)) {
+            cerr << "BuildLevel failed to load level " << lvl << endl;
             return false;
         }
-    }
 
-    // Load background texture
-    void loadBackground(const string& filename) {
-        if (!backgroundTexture.loadFromFile(filename)) {
-            cout << "Failed to load background: " << filename << endl;
-            // Load default background if failed
-            backgroundTexture.loadFromFile("Data/BG.png");
-        }
-        backgroundSprite.setTexture(backgroundTexture);
-    }
+        // Count total rings for UI and win condition
+        totalRingCount = countTotalRings();
 
-    // Update level logic
-    void update(RenderWindow& window,float deltaTime) {
-        if (isPaused || isComplete || isGameOver) {
-            return;
+        // Set up player properties if player factory exists
+        if (playerFactory) {
+            buildLevel->setPlayerFactory(playerFactory);
+            setupPlayers();
         }
 
-        // Update timer
-        timer += deltaTime;
+        cout << "Level " << lvl << " loaded with " << totalRingCount << " rings." << endl;
+        return true;
+    }
+
+    int countTotalRings() const {
+        if (!buildLevel) return 0;
+
+        int count = 0;
+        Collectibles** cols = buildLevel->getCollectibles();
+        int cCount = buildLevel->getCollectibleCount();
+
+        for (int i = 0; i < cCount; ++i) {
+            if (cols[i] && cols[i]->getSymbol() == 'r') {
+                ++count;
+            }
+        }
+
+        return count;
+    }
+
+    void setupPlayers() {
+        if (!playerFactory) return;
+
+        // Set gravity and level width for all players
+        for (int i = 0; i < 3; ++i) {
+            Player* p = playerFactory->getPlayer(i);
+            if (p) {
+                p->setGravity(gravity);
+                p->setGridWidth(levelWidth);
+
+                // Reset player position to starting point
+                if (i == playerFactory->getActivePlayerIndex()) {
+                    p->setPosition(300, 100);
+                }
+            }
+        }
+    }
+
+    //===========================================================================
+    // GAME LOOP METHODS
+    //===========================================================================
+    void update(RenderWindow& window, float dt) {
+        if (isPaused || isComplete || isGameOver) return;
+
+        // Update game timer
+        timer += dt;
 
         // Get active player
-        Player* activePlayer = playerFactory ? playerFactory->getActivePlayer() : nullptr;
-        if (!activePlayer) return;
+        Player* active = playerFactory ? playerFactory->getActivePlayer() : nullptr;
+        if (!active) return;
 
         // Calculate camera offset based on player position
-        float offsetX = 0;
-        if (activePlayer->getX() >= 640 && activePlayer->getX() <= levelWidth * 64 - 640) {
-            offsetX = activePlayer->getX() - 640;
-        }
-        else if (activePlayer->getX() > levelWidth * 64 - 640) {
-            offsetX = levelWidth * 64 - 1280;
+        float offsetX = calculateOffset(active->getX());
+
+        // Update all entities through BuildLevel
+        if (buildLevel) {
+            buildLevel->update(window, offsetX, dt, active);
         }
 
-        // Update entities through BuildLevel
-        buildLevel->update(window, offsetX, deltaTime, activePlayer);
-
-        // Update ring count
+        // Update game state
         updateRingCount();
-
-        // Calculate score
         updateScore();
-
-        // Update UI text
         updateUIText();
-
-        // Check win/lose conditions
         checkGameConditions();
     }
 
-    // Update ring count
-    void updateRingCount() {
-        int newRingCount = 0;
-        Collectibles** collectibles = buildLevel->getCollectibles();
-        if (collectibles) {
-            for (int i = 0; i < buildLevel->getCollectibleCount(); i++) {
-                if (collectibles[i] && collectibles[i]->getIsCollected()) {
-                    newRingCount++;
-                }
+    float calculateOffset(float px) const {
+        // Calculate camera offset based on player position
+        float max = levelWidth * 64 - 1280; // Maximum offset (level width minus screen width)
+
+        if (px < 640) return 0; // Player is in the left portion of the screen
+        if (px > levelWidth * 64 - 640) return max; // Player is in the right portion
+
+        return px - 640; // Center player on screen
+    }
+
+    void render(RenderWindow& window) {
+        if (!buildLevel) return;
+
+        // Draw background
+        window.draw(backgroundSprite);
+
+        // Calculate camera offset
+        float offsetX = 0;
+        if (playerFactory && playerFactory->getActivePlayer()) {
+            offsetX = calculateOffset(playerFactory->getActivePlayer()->getX());
+        }
+
+        // Draw obstacles (should be drawn first as they're in the background)
+        Obstacles** obstacles = buildLevel->getObstacles();
+        int obstacleCount = buildLevel->getObstacleCount();
+        for (int i = 0; i < obstacleCount; i++) {
+            if (obstacles[i]) {
+                obstacles[i]->draw(window, 1, offsetX);
             }
         }
 
-        if (newRingCount != ringCount) {
-            ringCount = newRingCount;
+        // Draw collectibles
+        Collectibles** collectibles = buildLevel->getCollectibles();
+        int collectibleCount = buildLevel->getCollectibleCount();
+        for (int i = 0; i < collectibleCount; i++) {
+            if (collectibles[i] && !collectibles[i]->getIsCollected()) {
+                collectibles[i]->draw(window, 1, offsetX);
+            }
+        }
+
+        // Draw enemies
+        Enemies** enemies = buildLevel->getEnemies();
+        int enemyCount = buildLevel->getEnemyCount();
+        for (int i = 0; i < enemyCount; i++) {
+            if (enemies[i] && enemies[i]->isDead()) {
+                enemies[i]->draw(window, 1,offsetX);
+            }
+        }
+
+        // Draw player
+        if (playerFactory) {
+            playerFactory->draw(window, 1.0f, offsetX);
+        }
+
+        // Draw UI elements (stays fixed on screen)
+        window.draw(scoreText);
+        window.draw(timerText);
+        window.draw(livesText);
+        window.draw(ringsText);
+    }
+
+    //===========================================================================
+    // GAME STATE MANAGEMENT
+    //===========================================================================
+    void pause() { isPaused = true; }
+    void resume() { isPaused = false; }
+    void togglePause() { isPaused = !isPaused; }
+
+    void setPlayerFactory(PlayerFactory* f) {
+        playerFactory = f;
+        if (buildLevel) {
+            buildLevel->setPlayerFactory(f);
+        }
+
+        // Update player properties if we already have a level loaded
+        if (playerFactory && buildLevel && buildLevel->getCurrentLevel() > 0) {
+            setupPlayers();
         }
     }
 
-    // Update score
-    void updateScore() {
-        // Base score: 10 points per ring
-        int baseScore = ringCount * 10;
+    void updateRingCount() {
+        if (!buildLevel) return;
 
-        // Time bonus: points for remaining time
-        int timeRemaining = timeLimit - timer;
-        int timeBonus = (timeRemaining > 0) ? timeRemaining * 2 : 0;
+        int count = 0;
+        Collectibles** cols = buildLevel->getCollectibles();
+        int colCount = buildLevel->getCollectibleCount();
 
-        scoreCounter = baseScore + timeBonus;
+        for (int i = 0; i < colCount; ++i) {
+            if (cols[i] && cols[i]->getSymbol() == 'r' && cols[i]->getIsCollected()) {
+                ++count;
+            }
+        }
+
+        ringCount = count;
     }
 
-    // Update UI text elements
+    void updateScore() {
+        // Base score from rings
+        int base = ringCount * 10;
+
+        // Bonus points for remaining time
+        int rem = static_cast<int>(timeLimit - timer);
+
+        // Final score calculation
+        scoreCounter = base + (rem > 0 ? rem * 2 : 0);
+    }
+
     void updateUIText() {
+        // Update score display
         scoreText.setString("Score: " + to_string(scoreCounter));
 
-        int minutes = static_cast<int>(timeLimit - timer) / 60;
-        int seconds = static_cast<int>(timeLimit - timer) % 60;
-        timerText.setString("Time: " + to_string(minutes) + ":" +
-            (seconds < 10 ? "0" : "") + to_string(seconds));
+        // Update timer display (MM:SS format)
+        int secs = static_cast<int>(timeLimit - timer);
+        if (secs < 0) secs = 0;
+        timerText.setString("Time: " + to_string(secs / 60) + ":" +
+            (secs % 60 < 10 ? "0" : "") + to_string(secs % 60));
 
+        // Update lives display
         livesText.setString("Lives: " + to_string(Player::getLives()));
+
+        // Update ring count display
         ringsText.setString("Rings: " + to_string(ringCount) + "/" + to_string(totalRingCount));
     }
 
-    // Check win/lose conditions
     void checkGameConditions() {
+        // Check win condition
         if (checkWin()) {
             isComplete = true;
             cout << "Level complete!" << endl;
         }
 
+        // Check lose condition
         if (checkLose()) {
             isGameOver = true;
             cout << "Game over!" << endl;
         }
     }
 
-    // Win condition check
-    bool checkWin() {
-        // Main win condition: collected all rings and reached end of level
+    bool checkWin() const {
+        // Win requires collecting all rings and reaching the end of the level
+        if (ringCount < totalRingCount || !playerFactory) return false;
 
-        // First check: all rings collected
-        bool allRingsCollected = (ringCount >= totalRingCount);
-
-        // Second check: reached end of level
-        bool reachedEnd = false;
-
-        if (playerFactory) {
-
-            Player* player = playerFactory->getActivePlayer();
-
-            if (player) {
-                // Consider level complete if player is near right edge
-                float playerX = player->getX();
-                float levelEndX = (levelWidth - 5) * 64; // 5 tiles from edge
-                reachedEnd = (playerX >= levelEndX);
-            }
-        }
-
-        return allRingsCollected && reachedEnd;
+        Player* p = playerFactory->getActivePlayer();
+        // Player needs to be near the end of the level (within 5 tiles of the right edge)
+        return p && (p->getX() >= (levelWidth - 5) * 64);
     }
 
-    // Lose condition check
-    bool checkLose() {
-        // Lose conditions:
-        // 1. Out of lives
-        if (Player::getLives() <= 0) {
-            return true;
-        }
+    bool checkLose() const {
+        // Lose if out of lives or time
+        if (Player::getLives() <= 0 || timer >= timeLimit) return true;
 
-        // 2. Out of time
-        if (timer >= timeLimit) {
-            return true;
-        }
-
-        // 3. Player fell into pit
         if (playerFactory) {
-            Player* player = playerFactory->getActivePlayer();
-            if (player && player->getY() > levelHeight * 64) {
-                // Reduce lives and respawn if still has lives
+            Player* p = playerFactory->getActivePlayer();
+            if (p && p->getY() > levelHeight * 64) { // Player fell off the level
+                // Decrease life and respawn if lives remain
                 Player::setLives(Player::getLives() - 1);
                 if (Player::getLives() > 0) {
-                    // Respawn player at start position
-                    player->setPosition(300.0f, 100.0f);
+                    p->setPosition(300, 100);
                     return false;
                 }
-                return true;
+                return true; // Game over if no lives remain
             }
         }
-
         return false;
     }
 
-    // Render the level
-    void render(RenderWindow& window) {
-        // Draw background
-        window.draw(backgroundSprite);
+    // Reset the player's position (e.g., after falling or taking damage)
+    void respawnPlayer() {
+        if (!playerFactory) return;
 
-        // Level rendering is handled by BuildLevel's update method
-        // which was called in the update() method
-
-        // Draw UI elements
-        window.draw(scoreText);
-        window.draw(timerText);
-        window.draw(livesText);
-        window.draw(ringsText);
-
-       
-    }
-
-    // Set PlayerFactory
-    void setPlayerFactory(PlayerFactory* factory) {
-        playerFactory = factory;
-
-        if (buildLevel) {
-            buildLevel->setPlayerFactory(playerFactory);
+        Player* active = playerFactory->getActivePlayer();
+        if (active) {
+            active->setPosition(300, 100); // Default spawn position
+            active->setVelocityX(0);
+            active->setVelocityY(0);
         }
     }
 
-    // Pause/resume methods
-    void pause() {
-        isPaused = true;
+    // Progress to next level
+    bool nextLevel() {
+        int nextLvl = levelNum + 1;
+        // Check if next level exists (typically 1-4)
+        if (nextLvl > 4) return false;
+
+        return loadLevel(nextLvl);
     }
 
-    void resume() {
-        isPaused = false;
+    //===========================================================================
+    // GETTERS & SETTERS
+    //===========================================================================
+    int getScore()         const { return scoreCounter; }
+    int getTimer()         const { return timer; }
+    int getRingCount()     const { return ringCount; }
+    int getTotalRingCount()const { return totalRingCount; }
+    bool getIsComplete()   const { return isComplete; }
+    bool getIsGameOver()   const { return isGameOver; }
+    bool getIsPaused()     const { return isPaused; }
+    BuildLevel* getBuildLevel() { return buildLevel; }
+    int getCurrentLevel()  const { return buildLevel ? buildLevel->getCurrentLevel() : 0; }
+
+    float getGravity()     const { return gravity; }
+    float getFriction()    const { return friction; }
+    int getLevelWidth()    const { return levelWidth; }
+    int getLevelHeight()   const { return levelHeight; }
+
+    void setGravity(float g) {
+        gravity = g;
+        // Update all players with new gravity
+        if (playerFactory) {
+            for (int i = 0; i < 3; ++i) {
+                Player* p = playerFactory->getPlayer(i);
+                if (p) p->setGravity(gravity);
+            }
+        }
     }
 
-    void togglePause() {
-        isPaused = !isPaused;
-    }
-
-    // Getters
-    int getScore() const {
-        return scoreCounter;
-    }
-
-    int getTimer() const {
-        return static_cast<int>(timer);
-    }
-
-    int getRingCount() const {
-        return ringCount;
-    }
-
-    int getTotalRingCount() const {
-        return totalRingCount;
-    }
-
-    bool getIsComplete() const {
-        return isComplete;
-    }
-
-    bool getIsGameOver() const {
-        return isGameOver;
-    }
-
-    bool getIsPaused() const {
-        return isPaused;
-    }
-
-    BuildLevel* getBuildLevel() {
-        return buildLevel;
-    }
-
-    // Get current level number
-    int getCurrentLevel() const {
-        return buildLevel ? buildLevel->getCurrentLevel() : 0;
-    }
+   
 };

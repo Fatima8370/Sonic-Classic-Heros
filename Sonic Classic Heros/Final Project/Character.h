@@ -93,12 +93,7 @@ protected:
     //===========================================================================
     // AUDIO
     //===========================================================================
-    SoundBuffer jumpSoundBuffer;
-    SoundBuffer damageSoundBuffer;
-    SoundBuffer specialSoundBuffer;
-    Sound jumpSound;
-    Sound damageSound;
-    Sound specialSound;
+   
 
 public:
     //===========================================================================
@@ -314,9 +309,7 @@ public:
             cout << "Player: Jumping with strength " << jumpStrength << "!" << endl;
 
             // Play jump sound if available
-            if (jumpSound.getBuffer() != nullptr) {
-                jumpSound.play();
-            }
+            
         }
     }
 
@@ -517,9 +510,7 @@ public:
             cout << "Player: Now invincible for " << invincibilityLimit << " seconds." << endl;
 
             // Play damage sound if available
-            if (damageSound.getBuffer() != nullptr) {
-                damageSound.play();
-            }
+            
         }
 
         if (hp <= 0) {
@@ -565,12 +556,7 @@ public:
         specialRightTexture.loadFromFile("Data/Player/tails_SAR.png");
         specialLeftTexture.loadFromFile("Data/Player/tails_SAL.png");
 
-        // Configure the sound effects
-        jumpSoundBuffer.loadFromFile("Data/Sound/tails_jump.wav");
-        jumpSound.setBuffer(jumpSoundBuffer);
-
-        specialSoundBuffer.loadFromFile("Data/Sound/tails_fly.wav");
-        specialSound.setBuffer(specialSoundBuffer);
+       
 
         // Set up animations with proper frame sizes and timing
         idleLeftAnim = Animation(idleLeftTexture, 46, 68, 1, 0.1f);
@@ -607,7 +593,7 @@ public:
             cout << "Tails: Flying mode activated! Timer set to " << specialAbilityLimit << " seconds" << endl;
 
             // Play special ability sound
-            specialSound.play();
+          
         }
     }
 
@@ -726,12 +712,7 @@ public:
         specialRightTexture.loadFromFile("Data/Player/Sonic_SAR.png");
         specialLeftTexture.loadFromFile("Data/Player/Sonic_SAL.png");
 
-        // Configure sound effects
-        jumpSoundBuffer.loadFromFile("Data/Sound/sonic_jump.wav");
-        jumpSound.setBuffer(jumpSoundBuffer);
-
-        specialSoundBuffer.loadFromFile("Data/Sound/spin_dash.wav");
-        specialSound.setBuffer(specialSoundBuffer);
+       
 
         // Initialize animations with proper frame sizes and timing
         idleLeftAnim = Animation(idleLeftTexture, 50, 70, 1, 0.05f);
@@ -773,8 +754,7 @@ public:
             cout << "Sonic: Speed boost activated! Speed increased from " << normalSpeed
                 << " to " << speed << " for " << specialAbilityLimit << " seconds" << endl;
 
-            // Play special ability sound
-            specialSound.play();
+       
         }
     }
 
@@ -837,12 +817,7 @@ public:
         specialRightTexture.loadFromFile("Data/Player/Knuckles_SAR.png");
         specialLeftTexture.loadFromFile("Data/Player/Knuckles_SAL.png");
 
-        // Configure sound effects
-        jumpSoundBuffer.loadFromFile("Data/Sound/knuckles_jump.wav");
-        jumpSound.setBuffer(jumpSoundBuffer);
-
-        specialSoundBuffer.loadFromFile("Data/Sound/knuckles_punch.wav");
-        specialSound.setBuffer(specialSoundBuffer);
+      
 
         // Initialize animations with proper frame sizes and timing
         idleLeftAnim = Animation(idleLeftTexture, 48, 72, 1, 0.05f);
@@ -881,10 +856,8 @@ public:
             isUsingSpecialAbility = true;
             punchingTimer = punchingDuration;
 
-            cout << "Knuckles: Powerful punch mode activated for " << punchingDuration
-                << " seconds!" << endl;
-            // Play special ability sound
-            specialSound.play();
+            cout << "Knuckles: Powerful punch mode activated for " << punchingDuration;
+           
         }
     }
 

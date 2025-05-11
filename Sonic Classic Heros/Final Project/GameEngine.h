@@ -53,7 +53,7 @@ private:
 
     Level levels[4]; // 3 and 1 boss level
 
-	Clock clock; // For delta time calculation
+    Clock clock; // For delta time calculation
 
 
 public:
@@ -62,10 +62,10 @@ public:
         gameMusic(screen_x, screen_y),
         leaderboard(screen_x, screen_y) {
 
-		levels[0] = Level(screen_x, screen_y, 1);
-        levels[1] = Level(screen_x, screen_y, 2);
-        levels[2] = Level(screen_x, screen_y, 3);
-        levels[3] = Level(screen_x, screen_y, 4);
+        levels[0] = Level(1);
+        levels[1] = Level(2);
+        levels[2] = Level(3);
+        levels[3] = Level(4);
 
         // Load font
         font.loadFromFile("OOP-Final/SyneMono-Regular.ttf");
@@ -114,7 +114,7 @@ public:
         Event ev;
         while (window.isOpen()) {
 
-			Time deltaTime = clock.restart();
+            Time deltaTime = clock.restart();
 
             while (window.pollEvent(ev)) {
                 if (ev.type == Event::Closed) {
@@ -195,7 +195,13 @@ private:
 
     // Handle input during gameplay
     void handleGameInput(Event& ev) {
-        
+        // Add the missing Escape key handling for gameplay state
+        if (ev.type == Event::KeyPressed) {
+            if (ev.key.code == Keyboard::Escape) {
+                isPaused = true;
+            }
+            // Other gameplay input handling can go here
+        }
     }
 
     // Handle input while game is paused
@@ -206,6 +212,7 @@ private:
             }
             else if (ev.key.code == Keyboard::Escape) {
                 isMenu = true;
+                isPlaying = false;
                 isPaused = false;
             }
         }
@@ -258,14 +265,26 @@ private:
                 isLoadScreen = true;
                 currentLevel = selectedIndex + 1;
             }
+            else if (ev.key.code == Keyboard::Escape) {
+                // Allow going back to menu from level select
+                isLevelSelect = false;
+                isMenu = true;
+            }
         }
     }
 
     // Handle loading screen input
     void handleLoadScreenInput(Event& ev) {
-        if (ev.type == Event::KeyPressed && ev.key.code == Keyboard::Enter) {
-            isLoadScreen = false;
-            isPlaying = true;
+        if (ev.type == Event::KeyPressed) {
+            if (ev.key.code == Keyboard::Enter) {
+                isLoadScreen = false;
+                isPlaying = true;
+            }
+            else if (ev.key.code == Keyboard::Escape) {
+                // Allow going back to level select from loading screen
+                isLoadScreen = false;
+                isLevelSelect = true;
+            }
         }
     }
 
@@ -273,21 +292,21 @@ private:
     void handleMenuSelection(int selectedOption) {
         switch (selectedOption) {
 
-            case 0: startNewGame(); break;
+        case 0: startNewGame(); break;
 
-            case 1: continueGame(); break;
+        case 1: continueGame(); break;
 
-            case 2: 
-                isMenu = false;
-                isLeaderboard = true;
-                break;
+        case 2:
+            isMenu = false;
+            isLeaderboard = true;
+            break;
 
-            case 3: 
-                isMenu = false;
-                isInOptions = true;
-                break;
+        case 3:
+            isMenu = false;
+            isInOptions = true;
+            break;
 
-            case 4: exitGame(); break;
+        case 4: exitGame(); break;
 
         }
     }
@@ -342,7 +361,7 @@ private:
 
     // Update game state
     void updateGame() {
-        
+
     }
 
     // Render the game
@@ -400,13 +419,6 @@ private:
         prompt.setPosition((screen_x - promptWidth) / 2, screen_y / 2 - 30);
 
 
-        RectangleShape textBox(Vector2f(300, 40));
-        textBox.setFillColor(Color(50, 50, 50));
-        textBox.setOutlineColor(Color::White);
-        textBox.setOutlineThickness(2);
-        textBox.setPosition((screen_x - 300) / 2, screen_y / 2 + 20);
-
-
         enterName.setPosition((screen_x - 280) / 2, screen_y / 2 + 25);
 
         if (playerName.empty()) {
@@ -424,7 +436,6 @@ private:
 
         window.draw(nameTitle);
         window.draw(prompt);
-        window.draw(textBox);
         window.draw(enterName);
         window.draw(instruction);
     }
@@ -457,6 +468,13 @@ private:
 
             window.draw(levelSelect[i]);
         }
+
+        // Add instruction for returning to menu
+        Text instruction("Press ESC to return to menu", font, 18);
+        instruction.setFillColor(Color(200, 200, 200));
+        float instructionWidth = calculateTextWidth("Press ESC to return to menu", 18);
+        instruction.setPosition((screen_x - instructionWidth) / 2, screen_y * 5 / 6);
+        window.draw(instruction);
     }
 
 
@@ -490,8 +508,15 @@ private:
         float promptWidth = calculateTextWidth("Press Enter to Start", 36);
         startPrompt.setPosition((screen_x - promptWidth) / 2, screen_y / 2 + 70);
 
+        // Add instruction for returning to level select
+        Text backInstruction("Press ESC to return to level select", font, 18);
+        backInstruction.setFillColor(Color(200, 200, 200));
+        float backWidth = calculateTextWidth("Press ESC to return to level select", 18);
+        backInstruction.setPosition((screen_x - backWidth) / 2, screen_y * 3 / 4);
+
         window.draw(title);
         window.draw(startPrompt);
+        window.draw(backInstruction);
     }
 
 
@@ -502,20 +527,38 @@ private:
 
 
         float pauseWidth = calculateTextWidth("PAUSED", 50);
-        pauseText.setPosition((screen_x - pauseWidth) / 2, screen_y / 2);
+        pauseText.setPosition((screen_x - pauseWidth) / 2, screen_y / 2 - 50);
+
+        Text continueText("Press ENTER to continue", font, 24);
+        continueText.setFillColor(Color::White);
+        float continueWidth = calculateTextWidth("Press ENTER to continue", 24);
+        continueText.setPosition((screen_x - continueWidth) / 2, screen_y / 2 + 20);
+
+        Text exitText("Press ESC to return to main menu", font, 24);
+        exitText.setFillColor(Color::White);
+        float exitWidth = calculateTextWidth("Press ESC to return to main menu", 24);
+        exitText.setPosition((screen_x - exitWidth) / 2, screen_y / 2 + 60);
 
         window.draw(pauseText);
+        window.draw(continueText);
+        window.draw(exitText);
     }
 
 
     void renderGameplay(RenderWindow& window, float deltaTime) {
         if (isPlaying && !isPaused) {
-            // Add game logic updates here
 
-            levels[selectedIndex].render(window); // Example delta time
+
+            
             levels[selectedIndex].update(window, deltaTime); // Example delta time
+			levels[selectedIndex].render(window); // Render the current level
 
 
+
+            Text escapeText("ESC: Pause", font, 14);
+            escapeText.setFillColor(Color(200, 200, 200, 180)); // Slight transparency
+            escapeText.setPosition(1240, 10); // Top-left corner
+            window.draw(escapeText);
         }
     }
 
