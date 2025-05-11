@@ -63,11 +63,10 @@ public:
     virtual void render(RenderWindow& window, float offset) override{
 
         if (!isCollected) {
-            // render the main collectible sprite (base sprite)
+
             a.setPosition(x - offset, y);
             window.draw(a);
 
-            // If the collectible is a boost/extra life,render the small icon on top
             if (stick.getTexture()) {
                 stick.setPosition(x - offset + (boxlen - 16) / 2,
                     y + (boxlen - 16) / 2);
@@ -101,7 +100,7 @@ public:
 
         text.loadFromFile("Data/rings.png");
          
-		collect = Animation(text, 128, 32, 4, 0.1f);
+		collect = Animation(text, 128, 32, 4, 0.01f);
 
 		hitbox = Hitbox(x, y, 32, 32);
     }
@@ -110,7 +109,8 @@ public:
         if (!isCollected) {
 			collect.setPosition(x - offset, y);
             collect.draw(window);
-            drawHitbox(window, offset);
+            //drawHitbox(window, offset);
+			collect.update(0.025f); // Update the animation
         }
     }
 };

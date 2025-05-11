@@ -12,7 +12,7 @@
 using namespace sf;
 using namespace std;
 
-class Enemies: public GameEntity {
+class Enemies : public GameEntity {
 
 protected:
     int hp;
@@ -49,7 +49,7 @@ public:
         sound.loadFromFile("Data/sounds/punch.wav");
 
         dying.setBuffer(sound);
-        dying.setPlayingOffset(seconds(.25f));
+        dying.setPlayingOffset(seconds(0.0f));
         dying.setVolume(100);
 
         // Set default animation to right (will be updated in update())
@@ -60,7 +60,7 @@ public:
 
     void draw(RenderWindow& window, float directionFaced, float offset) override {}
 
-	void update(char** grid, const int cell_size) override {}
+    void update(char** grid, const int cell_size) override {}
 
     bool detectArea(float playerX, float playerY) const {
         return (x + area >= playerX && x - area <= playerX);
@@ -68,13 +68,13 @@ public:
 
     // Updated to use hitbox collision
     virtual void die(const Hitbox& playerHitbox) {
-        if (hitbox.checkCollision(playerHitbox)) {
+        if (hitbox.checkCollision(playerHitbox) && !died) {
             dying.play();
             died = true;
         }
     }
 
-    virtual void render(RenderWindow& window, float offset) override{
+    virtual void render(RenderWindow& window, float offset) override {
         if (!died) {
             // Update current animation position
             if (currentAnimation) {
@@ -82,8 +82,7 @@ public:
                 currentAnimation->draw(window);
             }
 
-            // Optional: Draw hitbox for debugging
-            drawHitbox(window, offset);
+            //drawHitbox(window, offset);
         }
     }
 
@@ -202,12 +201,12 @@ public:
 
     // Override the die method to use hitbox
     void die(const Hitbox& playerHitbox) override {
-        if (hitbox.checkCollision(playerHitbox)) {
+        if (hitbox.checkCollision(playerHitbox) && !died) {
             cout << "BatBrain ded " << x << ' ' << y << "\n";
 
-            x = 0; y = 0;
             dying.play();
             died = true;
+            x = 0; y = 0;
         }
     }
 };
@@ -229,12 +228,12 @@ public:
     }
 
     void die(const Hitbox& playerHitbox) override {
-        if (hitbox.checkCollision(playerHitbox)) {
+        if (hitbox.checkCollision(playerHitbox) && !died) {
             cout << "Motobug ded " << x << ' ' << y << "\n";
 
-            x = 0; y = 0;
             dying.play();
             died = true;
+            x = 0; y = 0;
         }
     }
 };
@@ -412,17 +411,16 @@ public:
 
         y -= 150;
 
-        // Customize hitbox for BeeBot
         hitbox = Hitbox(x, y, 96.0f, 64.0f);
     }
 
     void die(const Hitbox& playerHitbox) override {
-        if (hitbox.checkCollision(playerHitbox)) {
+        if (hitbox.checkCollision(playerHitbox) && !died) {
             cout << "BeeBot ded " << x << ' ' << y << "\n";
 
-            x = 0; y = 0;
             dying.play();
             died = true;
+            x = 0; y = 0;
         }
     }
 };
@@ -444,12 +442,12 @@ public:
     }
 
     void die(const Hitbox& playerHitbox) override {
-        if (hitbox.checkCollision(playerHitbox)) {
+        if (hitbox.checkCollision(playerHitbox) && !died) {
             cout << "CrabMeat ded at position " << x << ' ' << y << "\n";
 
-            x = 0; y = 0;
             dying.play();
             died = true;
+            x = 0; y = 0;
         }
     }
 };
@@ -569,7 +567,7 @@ public:
     }
 
     void die(const Hitbox& playerHitbox) override {
-        if (hitbox.checkCollision(playerHitbox)) {
+        if (hitbox.checkCollision(playerHitbox) && !died) {
             cout << "EggStinger Neutralized\n";
             dying.play();
             died = true;
@@ -578,7 +576,6 @@ public:
 };
 
 // Refactored Factory Classes
-
 
 class EnemyFactory {
 private:
@@ -615,26 +612,26 @@ public:
 
     // Update an array of enemies
     void updateEnemies(RenderWindow& window, Enemies** enemies, int enemyCount, float offsetX, float deltaTime, Player* player) {
-             
+
         const Hitbox playerHitbox = player->getHitbox();
         bool attack = player->getIsJumping();
 
         for (int i = 0; i < enemyCount; i++) {
             if (enemies[i] != nullptr) {
-                
-
                 enemies[i]->update(playerHitbox.getX(), playerHitbox.getY(), deltaTime);
-
                 enemies[i]->render(window, offsetX);
-
 
                 if (attack) {
                     enemies[i]->die(playerHitbox);
                 }
 
                 if (enemies[i]->isDead()) {
-                    delete enemies[i];
-                    enemies[i] = nullptr;
+                    // We should not delete enemies immediately after setting died to true
+                    // The sound needs time to play
+                    if (enemies[i]->getX() == 0 && enemies[i]->getY() == 0) {
+                        delete enemies[i];
+                        enemies[i] = nullptr;
+                    }
                 }
                 else {
                     player->takeDamage(enemies[i]->getHitbox());
@@ -649,12 +646,7 @@ public:
                         player->takeDamage(shootingEnemy->getBulletHitbox());
                     }
                 }
-                
-               
             }
         }
-
     }
 };
-
-

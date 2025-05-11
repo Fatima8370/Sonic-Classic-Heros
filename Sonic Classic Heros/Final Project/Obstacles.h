@@ -59,7 +59,7 @@ public:
     virtual void render(RenderWindow& window, float offset) override {
         sprite.setPosition(x - offset, y);  // Apply offset for scrolling
         window.draw(sprite);
-        drawHitbox(window, offset);
+        //drawHitbox(window, offset);
     }
 
     virtual void checkCollision(Player* player) = 0;
@@ -161,7 +161,7 @@ public:
             // Check if player is colliding with the top of the spikes
             if (player->getHitbox().checkBottomCollision(hitbox)) {
                 isColliding = true;
-                player->takeDamage(10);
+                player->takeDamage(hitbox);
                 player->stopFalling();
                 player->stopJumping();
             }

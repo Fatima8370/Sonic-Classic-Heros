@@ -255,6 +255,40 @@ private:
     string getPlayerName() { return Playername; }
     void setPlayerName(string name) { Playername = name; }
 
+
     // SET NAME AT THE START OF THE GAME
+	void SetName() {
+		cout << "Enter your name: ";
+		cin >> Playername;
+		save.setPlayerName(Playername);
+		save.saveToFile("saved.txt");
+	}
+
+
+	// select a level
+	void selectLevel(int level) {
+		switch (level) {
+		case 1:
+			// Load level 1
+			break;
+		case 2:
+			// Load level 2
+			break;
+		case 3:
+			// Load level 3
+			break;
+		case 4:
+			// Load level 4
+			break;
+		default:
+			cout << "Invalid level selection.\n";
+			break;
+		}
+	}
+
+
+
+
+
 
 };

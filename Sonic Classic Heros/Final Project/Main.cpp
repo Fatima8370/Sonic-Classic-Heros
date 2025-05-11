@@ -224,6 +224,10 @@ int main()
         {
             offsetX = activePlayer->getX() - screen_x / 2  ;  // Camera follows player
         }
+		else if (activePlayer->getX() >= width * 64 - screen_x / 2)
+		{
+			offsetX = width * 64 - screen_x;  // Keep the player at the right edge
+		}
         else {
 			offsetX = 0;  // Keep the player at the left if they are close to the left edge
         }
@@ -241,9 +245,6 @@ int main()
         factory.update(level.getObstacleLayout(), 64);
 
 		
-
-
-
 		//display_level(window, height, width, lvl, wallSprite1, wallSprite2, cell_size, offsetX);
 
 

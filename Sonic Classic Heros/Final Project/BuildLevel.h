@@ -272,7 +272,6 @@ public:
                 }
                 else if (ch >= 'a' && ch <= 'z') {
                     collectibleLayout[i][j] = ch;
-                    cout << "Collectible "<< ch <<" at : " << i << ' ' << j << endl;
                 }
                 else if (ch >= '0' && ch <= '9') {
                     enemyLayout[i][j] = ch;

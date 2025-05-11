@@ -25,9 +25,9 @@ public:
     void update(float deltaTime) {
         m_elapsedTime += deltaTime;
         if (m_elapsedTime >= m_frameDuration) {
-            m_elapsedTime -= m_frameDuration;  // reset the elapsed time
+            m_elapsedTime -= m_frameDuration;  
             m_currentFrame = (m_currentFrame + 1) % m_totalFrames;  // move to the next frame
-            updateFrameRect(); // Update the texture rectangle for the new frame
+            updateFrameRect(); 
         }
     }
 

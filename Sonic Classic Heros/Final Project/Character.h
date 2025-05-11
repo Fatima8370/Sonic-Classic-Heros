@@ -54,6 +54,8 @@ protected:
     float invincibilityLimit;
     float invincibilityTimer;
 
+    int maxWidth;
+
     // Animations
     Animation idleLeftAnim;
     Animation idleRightAnim;
@@ -276,8 +278,8 @@ public:
 		if (position[0] < 0) { // fixed screen size
             position[0] = 128;
         }
-        else if (position[0] >= gridWidth*64 ) {
-            position[0] = 64 * (gridWidth );
+        else if (position[0] > gridWidth*64 ) {
+            position[0] = 64 * (gridWidth);
         }
 
         velocity[0] = speed * directionX;
@@ -330,8 +332,7 @@ public:
         int bottomRightX = static_cast<int>((position[0] + hitboxFactorX + playerWidth) / cell_size);
 
         const int maxHeight = 14;
-        const int maxWidth = 110;
-
+        
         bool collision = false;
 
         if (bottomLeftY >= 0 && bottomLeftY < maxHeight && bottomLeftX >= 0 && bottomLeftX < maxWidth) {
@@ -389,15 +390,6 @@ public:
         else {
             position[1] = offsetY;
             onGround = false;
-        }
-
-        if (position[1] >= 832) { // Bottomless Pit
-            position[1] = 832;
-            velocity[1] = 0.0f;
-            cout << "GAME OVER\n";
-            onGround = true;
-
-			exit(0);
         }
 
         updateHitbox();
@@ -519,6 +511,10 @@ public:
     void Extra() {
         hp += 50;
     }
+
+	void setGridWidth(int width) {
+		maxWidth = width;
+	}
 
 };
 
@@ -856,6 +852,7 @@ public:
         players[2] = createKnuckles();
 
         players[activePlayerIndex]->setActive(true);
+		players[activePlayerIndex]->setGridWidth(gridWidth);
 
         for (int i = 0; i < NUM_PLAYERS; i++) {
             players[i]->setPosition(100.0f + i * 50.0f, 100.0f);
@@ -948,6 +945,16 @@ public:
             }
         }
         //cout << "--- End frame update ---\n" << endl;
+
+        if (activePlayer->getY() >= 832) { // Bottomless Pit
+            
+            cout << "GAME OVER\n";
+           
+
+            exit(0);
+        }
+
+
     }
 
 };
