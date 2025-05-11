@@ -1,4 +1,6 @@
 #pragma once
+// BuildLevel.h
+#pragma once
 
 #include <iostream>
 #include <fstream>
@@ -11,6 +13,8 @@
 #include "Obstacles.h"
 #include "Enemies.h"
 #include "Collectibles.h"
+#include "Character.h"
+#include "EntityFactory.h"
 
 using namespace std;
 using namespace sf;
@@ -18,17 +22,7 @@ using namespace sf;
 class BuildLevel {
 private:
 
-    Level* level;
-
-    // Factories - now only create entities, don't store them
-    EnemyFactory* enemyFactory;
-    CollectibleFactory* collectibleFactory;
-    ObstacleFactory* obstacleFactory;
-
-    // Entity arrays - managed by BuildLevel
-    Enemies** enemies;
-    Collectibles** collectibles;
-    Obstacles** obstacles;
+    EntityFactory* entityFactory;
 
     // Counts
     int enemyCount;
@@ -40,7 +34,7 @@ private:
     int width;
     int currentLevel;
 
-    // Level data (could be loaded from files)
+    // Level data (loaded from files)
     char** enemyLayout;
     char** collectibleLayout;
     char** obstacleLayout;
@@ -123,52 +117,9 @@ private:
         }
     }
 
-    // Clean up entities
-    void clearEntities() {
-        // Clean up enemies
-        if (enemies) {
-            for (int i = 0; i < enemyCount; i++) {
-                if (enemies[i]) {
-                    delete enemies[i];
-                }
-            }
-            delete[] enemies;
-            enemies = nullptr;
-        }
-
-        // Clean up collectibles
-        if (collectibles) {
-            for (int i = 0; i < collectibleCount; i++) {
-                if (collectibles[i]) {
-                    delete collectibles[i];
-                }
-            }
-            delete[] collectibles;
-            collectibles = nullptr;
-        }
-
-        // Clean up obstacles
-        if (obstacles) {
-            for (int i = 0; i < obstacleCount; i++) {
-                if (obstacles[i]) {
-                    delete obstacles[i];
-                }
-            }
-            delete[] obstacles;
-            obstacles = nullptr;
-        }
-
-        enemyCount = collectibleCount = obstacleCount = 0;
-    }
-
 public:
     BuildLevel() :
-        enemyFactory(nullptr),
-        collectibleFactory(nullptr),
-        obstacleFactory(nullptr),
-        enemies(nullptr),
-        collectibles(nullptr),
-        obstacles(nullptr),
+        entityFactory(nullptr),
         enemyCount(0),
         collectibleCount(0),
         obstacleCount(0),
@@ -178,43 +129,22 @@ public:
         enemyLayout(nullptr),
         collectibleLayout(nullptr),
         obstacleLayout(nullptr),
-        levelGrid(nullptr),
-        level(nullptr)
+        levelGrid(nullptr)
     {
+        // Create the EntityFactory
+        entityFactory = new EntityFactory();
     }
 
     ~BuildLevel() {
         cleanup();
     }
 
-
-
-    Level* generateLevel(int width, int height, int levelNum) {
-        if (level) {
-            delete level;  // Clean up previous level if exists
-        }
-        level = new Level(width, height, levelNum);
-        level->loadLevel();
-        return level;
-    }
-
     void cleanup() {
-        // Clean up factories
-        if (enemyFactory) {
-            delete enemyFactory;
-            enemyFactory = nullptr;
+        // Clean up EntityFactory
+        if (entityFactory) {
+            delete entityFactory;
+            entityFactory = nullptr;
         }
-        if (collectibleFactory) {
-            delete collectibleFactory;
-            collectibleFactory = nullptr;
-        }
-        if (obstacleFactory) {
-            delete obstacleFactory;
-            obstacleFactory = nullptr;
-        }
-
-        // Clean up entities
-        clearEntities();
 
         // Clean up layouts
         if (enemyLayout) {
@@ -251,7 +181,6 @@ public:
     }
 
     bool loadLevel(int levelNum) {
-
         currentLevel = levelNum;
         string filename = "Data/Level/level" + to_string(levelNum) + ".csv";
 
@@ -263,6 +192,11 @@ public:
 
         // Clear previous data
         cleanup();
+
+        // Create a new EntityFactory
+        entityFactory = new EntityFactory();
+
+        // Load level data
         loadLevelData(levelNum);
 
         // Read level data
@@ -271,7 +205,7 @@ public:
                 char ch;
                 file.get(ch);
 
-                if (file.eof()) { // id error while reading files
+                if (file.eof()) { // if error while reading files
                     return false;
                 }
 
@@ -310,80 +244,38 @@ public:
         cout << " - " << enemyCount << " enemies" << endl;
         cout << " - " << collectibleCount << " collectibles" << endl;
 
-        // Create factories
-        enemyFactory = new EnemyFactory(height, width, levelNum);
-        collectibleFactory = new CollectibleFactory(height, width, levelNum);
-        obstacleFactory = new ObstacleFactory(height, width, levelNum);
+        // Initialize the entity factory
+        entityFactory->initialize(levelNum, height, width);
 
-        // Allocate memory for entity arrays
-        enemies = new Enemies * [enemyCount]();
-        collectibles = new Collectibles * [collectibleCount]();
-        obstacles = new Obstacles * [obstacleCount]();
-
-        // Create entities based on layouts
-        int enemyIndex = 0;
-        for (int i = 0; i < height; i++) {
-            for (int j = 0; j < width; j++) {
-                if (enemyLayout[i][j] != '\0') {
-                    Enemies* e = enemyFactory->createEnemy(enemyLayout[i][j], j * 64, i * 64);
-                    if (e) {
-                        enemies[enemyIndex++] = e;
-                    }
-                }
-            }
-        }
-
-        int collectibleIndex = 0;
-        for (int i = 0; i < height; i++) {
-            for (int j = 0; j < width; j++) {
-                if (collectibleLayout[i][j] != '\0') {
-                    Collectibles* c = collectibleFactory->createCollectible(collectibleLayout[i][j], j * 64, i * 64);
-                    if (c) {
-                        collectibles[collectibleIndex++] = c;
-                    }
-                }
-            }
-        }
-
-        int obstacleIndex = 0;
-        for (int i = 0; i < height; i++) {
-            for (int j = 0; j < width; j++) {
-                if (obstacleLayout[i][j] != '\0') {
-                    Obstacles* o = obstacleFactory->createObstacle(obstacleLayout[i][j], j * 64, i * 64);
-                    if (o) {
-                        obstacles[obstacleIndex++] = o;
-                    }
-                }
-            }
-        }
-
-        cout << "Level " << levelNum << " loaded with "
-            << enemyIndex << " enemies, "
-            << collectibleIndex << " collectibles, and "
-            << obstacleIndex << " obstacles." << endl;
+        // Create entities using the factory
+        entityFactory->createEntities(enemyLayout, collectibleLayout, obstacleLayout);
 
         return true;
     }
 
     void update(RenderWindow& window, float offsetX, float deltaTime, Player* player) {
-        // Update all entities using the factory update methods
-        if (enemyFactory && enemies) {
-            enemyFactory->updateEnemies(window, enemies, enemyCount, offsetX, deltaTime, player);
-        }
-
-        if (collectibleFactory && collectibles) {
-            collectibleFactory->updateCollectibles(window, collectibles, collectibleCount, offsetX, deltaTime, player);
-        }
-
-        if (obstacleFactory && obstacles) {
-            obstacleFactory->updateObstacles(window, obstacles, obstacleCount, offsetX, player);
+        // Update all entities using the entity factory
+        if (entityFactory) {
+            entityFactory->updateEntities(window, offsetX, deltaTime, player);
         }
     }
 
     bool isLevelComplete() {
-        // Check conditions for level completion
-        // This could be player reaching the end, defeating all enemies, collecting all items, etc.
-        return false; // Placeholder
+        
+        Collectibles** collectibles = entityFactory->getCollectibles();
+        int collectibleCount = entityFactory->getCollectibleCount();
+
+        bool allRingsCollected = true;
+        for (int i = 0; i < collectibleCount; i++) {
+            if (collectibles[i] && !collectibles[i]->getIsCollected()) {
+                allRingsCollected = false;
+                break;
+            }
+        }
+
+        // You would also check if player reached the end of the level
+        // This is just a placeholder
+        return false;
     }
 
     void nextLevel() {
@@ -395,25 +287,31 @@ public:
     }
 
     // Getters for entity arrays and counts
-    int getEnemyCount() const { return enemyCount; }
-    int getCollectibleCount() const { return collectibleCount; }
-    int getObstacleCount() const { return obstacleCount; }
+    int getEnemyCount() const { return entityFactory ? entityFactory->getEnemyCount() : 0; }
+    int getCollectibleCount() const { return entityFactory ? entityFactory->getCollectibleCount() : 0; }
+    int getObstacleCount() const { return entityFactory ? entityFactory->getObstacleCount() : 0; }
 
-    Enemies** getEnemies() { return enemies; }
-    Collectibles** getCollectibles() { return collectibles; }
-    Obstacles** getObstacles() { return obstacles; }
+    Enemies** getEnemies() { return entityFactory ? entityFactory->getEnemies() : nullptr; }
+    Collectibles** getCollectibles() { return entityFactory ? entityFactory->getCollectibles() : nullptr; }
+    Obstacles** getObstacles() { return entityFactory ? entityFactory->getObstacles() : nullptr; }
 
+    // Getters for layouts
     char** getEnemyLayout() { return enemyLayout; }
     char** getObstacleLayout() { return obstacleLayout; }
     char** getCollectiblesLayout() { return collectibleLayout; }
+    char** getLevelGrid() { return levelGrid; }
 
-	EnemyFactory* getEnemyFactory() { return enemyFactory; }
-	CollectibleFactory* getCollectibleFactory() { return collectibleFactory; }
-	ObstacleFactory* getObstacleFactory() { return obstacleFactory; }
+    // Getter for entity factory
+    EntityFactory* getEntityFactory() { return entityFactory; }
 
-	int getHeight() const { return height; }
-	int getWidth() const { return width; }
+    // Getters for level dimensions
+    int getWidth() const { return width; }
+    int getHeight() const { return height; }
 
-	Level* getLevel() { return level; }
+    // Method to set PlayerFactory in EntityFactory
+    void setPlayerFactory(PlayerFactory* playerFactory) {
+        if (entityFactory) {
+            entityFactory->setPlayerFactory(playerFactory);
+        }
+    }
 };
-

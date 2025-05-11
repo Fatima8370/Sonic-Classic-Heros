@@ -4,7 +4,6 @@
 #include <SFML/Graphics.hpp>
 
 #include "Character.h"
-#include "GameEntity.h"
 
 using namespace sf;
 using namespace std;
@@ -62,7 +61,7 @@ public:
     //===========================================================================
     // UPDATE & POSITION METHODS
     //===========================================================================
-    void update(char** grid, const int cell_size = 64) override {
+    void update(char** grid, const int cell_size) override {
         updateHitbox();
     }
 

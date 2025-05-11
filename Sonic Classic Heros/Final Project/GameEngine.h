@@ -51,11 +51,22 @@ private:
     Text prompt;
     Text enterName;
 
+    Level levels[4]; // 3 and 1 boss level
+
+	Clock clock; // For delta time calculation
+
+
 public:
     GameEngine() : window(VideoMode(screen_x, screen_y), "Sonic Classic Heroes", Style::Close),
         menu(screen_x, screen_y),
         gameMusic(screen_x, screen_y),
         leaderboard(screen_x, screen_y) {
+
+		levels[0] = Level(screen_x, screen_y, 1);
+        levels[1] = Level(screen_x, screen_y, 2);
+        levels[2] = Level(screen_x, screen_y, 3);
+        levels[3] = Level(screen_x, screen_y, 4);
+
         // Load font
         font.loadFromFile("OOP-Final/SyneMono-Regular.ttf");
 
@@ -102,6 +113,9 @@ public:
     void run() {
         Event ev;
         while (window.isOpen()) {
+
+			Time deltaTime = clock.restart();
+
             while (window.pollEvent(ev)) {
                 if (ev.type == Event::Closed) {
                     window.close();
@@ -137,7 +151,7 @@ public:
             }
 
             updateGame();
-            render();
+            render(window, deltaTime.asSeconds());
         }
     }
 
@@ -181,12 +195,7 @@ private:
 
     // Handle input during gameplay
     void handleGameInput(Event& ev) {
-        if (ev.type == Event::KeyPressed) {
-            if (ev.key.code == Keyboard::Escape) {
-                isPaused = true;
-            }
-            // Add character controls here
-        }
+        
     }
 
     // Handle input while game is paused
@@ -263,23 +272,23 @@ private:
     // Process menu selection
     void handleMenuSelection(int selectedOption) {
         switch (selectedOption) {
-        case 0:  // New Game
-            startNewGame();
-            break;
-        case 1:  // Continue
-            continueGame();
-            break;
-        case 2:  // Leaderboard
-            isMenu = false;
-            isLeaderboard = true;
-            break;
-        case 3:  // Options
-            isMenu = false;
-            isInOptions = true;
-            break;
-        case 4:  // Exit
-            exitGame();
-            break;
+
+            case 0: startNewGame(); break;
+
+            case 1: continueGame(); break;
+
+            case 2: 
+                isMenu = false;
+                isLeaderboard = true;
+                break;
+
+            case 3: 
+                isMenu = false;
+                isInOptions = true;
+                break;
+
+            case 4: exitGame(); break;
+
         }
     }
 
@@ -295,10 +304,12 @@ private:
         cout << "Starting new game, entering name entry screen" << endl;
     }
 
-    // Continue a previously saved game
+
     void continueGame() {
         if (save.loadFromFile("saved.txt")) {
             playerName = save.getPlayerName();
+
+
             isMenu = false;
             isLevelSelect = true;
         }
@@ -331,13 +342,11 @@ private:
 
     // Update game state
     void updateGame() {
-        if (isPlaying && !isPaused) {
-            // Add game logic updates here
-        }
+        
     }
 
     // Render the game
-    void render() {
+    void render(RenderWindow& window, float deltaTime) {
         window.clear();
 
         if (isNameEntry) {
@@ -363,37 +372,43 @@ private:
                 renderPauseScreen();
             }
             else {
-                renderGameplay();
+                renderGameplay(window, deltaTime);
             }
         }
 
         window.display();
     }
 
+    // Calculate approximate text width based on character count and size
+    float calculateTextWidth(const string& str, int charSize) {
+        return str.length() * charSize * 0.6f;
+    }
+
     // Render name entry screen
     void renderNameEntry() {
-        // Create a title for the name entry screen
+
         Text nameTitle("ENTER YOUR NAME", font, 36);
         nameTitle.setFillColor(Color::Cyan);
-        FloatRect titleBounds = nameTitle.getLocalBounds();
-        nameTitle.setPosition((screen_x - titleBounds.width) / 2, screen_y / 4);
 
-        // Position the prompt and input field
+
+        float nameTitleWidth = calculateTextWidth("ENTER YOUR NAME", 36);
+        nameTitle.setPosition((screen_x - nameTitleWidth) / 2, screen_y / 4);
+
+
         prompt.setString("Type your name and press Enter:");
-        FloatRect promptBounds = prompt.getLocalBounds();
-        prompt.setPosition((screen_x - promptBounds.width) / 2, screen_y / 2 - 30);
+        float promptWidth = calculateTextWidth("Type your name and press Enter:", 24);
+        prompt.setPosition((screen_x - promptWidth) / 2, screen_y / 2 - 30);
 
-        // Create an underline or box for the text field
+
         RectangleShape textBox(Vector2f(300, 40));
         textBox.setFillColor(Color(50, 50, 50));
         textBox.setOutlineColor(Color::White);
         textBox.setOutlineThickness(2);
         textBox.setPosition((screen_x - 300) / 2, screen_y / 2 + 20);
 
-        // Position the entered name text
+
         enterName.setPosition((screen_x - 280) / 2, screen_y / 2 + 25);
 
-        // Add cursor indicator if no text
         if (playerName.empty()) {
             Text cursorText("_", font, 24);
             cursorText.setPosition((screen_x - 280) / 2, screen_y / 2 + 25);
@@ -404,8 +419,8 @@ private:
         // Add instruction text
         Text instruction("Press ESC to return to menu", font, 18);
         instruction.setFillColor(Color(200, 200, 200));
-        FloatRect instBounds = instruction.getLocalBounds();
-        instruction.setPosition((screen_x - instBounds.width) / 2, screen_y * 3 / 4);
+        float instructionWidth = calculateTextWidth("Press ESC to return to menu", 18);
+        instruction.setPosition((screen_x - instructionWidth) / 2, screen_y * 3 / 4);
 
         window.draw(nameTitle);
         window.draw(prompt);
@@ -416,73 +431,95 @@ private:
 
     // Render level selection screen
     void renderLevelSelect() {
-        // Draw a title for the level select screen
+
         Text selectTitle("SELECT LEVEL", font, 36);
         selectTitle.setFillColor(Color::Cyan);
-        FloatRect titleBounds = selectTitle.getLocalBounds();
-        selectTitle.setPosition((screen_x - titleBounds.width) / 2, screen_y / 10);
+        float titleWidth = calculateTextWidth("SELECT LEVEL", 36);
+        selectTitle.setPosition((screen_x - titleWidth) / 2, screen_y / 10);
         window.draw(selectTitle);
 
-        // Draw level options
+
         for (int i = 0; i < LEVEL_COUNT; ++i) {
-            // Highlight the selected level
+
             levelSelect[i].setFillColor(i == selectedIndex ? Color::Yellow : Color::White);
 
-            // Get text bounds to center the text
-            FloatRect textBounds = levelSelect[i].getLocalBounds();
-            levelSelect[i].setPosition((screen_x - textBounds.width) / 2, (screen_y / 6) * (i + 2));
+            string levelText;
+
+            if (i < LEVEL_COUNT - 1) {
+                levelText = "Level " + to_string(i + 1);
+            }
+            else {
+                levelText = "Boss Level";
+            }
+
+            float textWidth = calculateTextWidth(levelText, 24);
+            levelSelect[i].setPosition((screen_x - textWidth) / 2, (screen_y / 6) * (i + 2));
 
             window.draw(levelSelect[i]);
         }
     }
 
-    // Render loading screen
+
     void renderLoadingScreen() {
         Text title;
 
-        // Display appropriate title based on level
+
+        string titleText;
         if (currentLevel == 4) {
-            title.setString("BOSS LEVEL");
+            titleText = "BOSS LEVEL";
         }
         else {
-            title.setString("LEVEL " + to_string(currentLevel));
+            titleText = "LEVEL " + to_string(currentLevel);
         }
 
+        title.setString(titleText);
         title.setFont(font);
         title.setFillColor(Color::Blue);
         title.setCharacterSize(50);
         title.setStyle(Text::Bold);
 
-        // Center the title horizontally
-        FloatRect titleBounds = title.getLocalBounds();
-        title.setPosition((screen_x - titleBounds.width) / 2, screen_y / 2);
+
+        float titleWidth = calculateTextWidth(titleText, 50);
+        title.setPosition((screen_x - titleWidth) / 2, screen_y / 2);
+
 
         Text startPrompt("Press Enter to Start", font, 36);
         startPrompt.setFillColor(Color::White);
 
-        // Center the prompt horizontally
-        FloatRect promptBounds = startPrompt.getLocalBounds();
-        startPrompt.setPosition((screen_x - promptBounds.width) / 2, screen_y / 2 + 70);
+
+        float promptWidth = calculateTextWidth("Press Enter to Start", 36);
+        startPrompt.setPosition((screen_x - promptWidth) / 2, screen_y / 2 + 70);
 
         window.draw(title);
         window.draw(startPrompt);
     }
 
-    // Render pause screen
+
     void renderPauseScreen() {
-        // Add pause screen rendering here
+
         Text pauseText("PAUSED", font, 50);
         pauseText.setFillColor(Color::White);
-        pauseText.setPosition(screen_x / 2 - 100, screen_y / 2);
+
+
+        float pauseWidth = calculateTextWidth("PAUSED", 50);
+        pauseText.setPosition((screen_x - pauseWidth) / 2, screen_y / 2);
+
         window.draw(pauseText);
     }
 
-    // Render gameplay
-    void renderGameplay() {
-        // Add gameplay rendering here
+
+    void renderGameplay(RenderWindow& window, float deltaTime) {
+        if (isPlaying && !isPaused) {
+            // Add game logic updates here
+
+            levels[selectedIndex].render(window); // Example delta time
+            levels[selectedIndex].update(window, deltaTime); // Example delta time
+
+
+        }
     }
 
-    // Exit the game
+
     void exitGame() {
         isExiting = true;
         window.close();

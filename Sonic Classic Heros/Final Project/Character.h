@@ -576,14 +576,14 @@ public:
         idleLeftAnim = Animation(idleLeftTexture, 46, 68, 1, 0.1f);
         idleRightAnim = Animation(idleRightTexture, 46, 68, 1, 0.1f);
 
-        walkLeftAnim = Animation(walkLeftTexture, 855, 68, 10, 0.1f);
-        walkRightAnim = Animation(walkRightTexture, 855, 68, 10, 0.1f);
+        walkLeftAnim = Animation(walkLeftTexture, 855, 68, 10, 0.05f);
+        walkRightAnim = Animation(walkRightTexture, 855, 68, 10, 0.05f);
 
-        jumpLeftAnim = Animation(jumpLeftTexture, 180, 62, 2, 0.1f);
-        jumpRightAnim = Animation(jumpRightTexture, 180, 62, 2, 0.1f);
+        jumpLeftAnim = Animation(jumpLeftTexture, 180, 62, 2, 0.05f);
+        jumpRightAnim = Animation(jumpRightTexture, 180, 62, 2, 0.05f);
 
-        specialLeftAnim = Animation(specialLeftTexture, 381, 68, 4, 0.1f);
-        specialRightAnim = Animation(specialRightTexture, 381, 68, 4, 0.1f);
+        specialLeftAnim = Animation(specialLeftTexture, 381, 68, 4, 0.05f);
+        specialRightAnim = Animation(specialRightTexture, 381, 68, 4, 0.05f);
 
         currentAnimation = &idleRightAnim;
 
@@ -734,17 +734,17 @@ public:
         specialSound.setBuffer(specialSoundBuffer);
 
         // Initialize animations with proper frame sizes and timing
-        idleLeftAnim = Animation(idleLeftTexture, 50, 70, 1, 0.1f);
-        idleRightAnim = Animation(idleRightTexture, 50, 70, 1, 0.1f);
+        idleLeftAnim = Animation(idleLeftTexture, 50, 70, 1, 0.05f);
+        idleRightAnim = Animation(idleRightTexture, 50, 70, 1, 0.05f);
 
-        walkLeftAnim = Animation(walkLeftTexture, 756, 70, 10, 0.1f);
-        walkRightAnim = Animation(walkRightTexture, 756, 70, 10, 0.1f);
+        walkLeftAnim = Animation(walkLeftTexture, 756, 70, 10, 0.05f);
+        walkRightAnim = Animation(walkRightTexture, 756, 70, 10, 0.05f);
 
-        jumpLeftAnim = Animation(jumpLeftTexture, 520, 56, 8, 0.1f);
-        jumpRightAnim = Animation(jumpRightTexture, 520, 56, 8, 0.1f);
+        jumpLeftAnim = Animation(jumpLeftTexture, 520, 56, 8, 0.05f);
+        jumpRightAnim = Animation(jumpRightTexture, 520, 56, 8, 0.05f);
 
-        specialLeftAnim = Animation(specialLeftTexture, 560, 70, 8, 0.1f);
-        specialRightAnim = Animation(specialRightTexture, 560, 70, 8, 0.1f);
+        specialLeftAnim = Animation(specialLeftTexture, 560, 70, 8, 0.05f);
+        specialRightAnim = Animation(specialRightTexture, 560, 70, 8, 0.05f);
 
         currentAnimation = &idleRightAnim;
 
@@ -845,17 +845,17 @@ public:
         specialSound.setBuffer(specialSoundBuffer);
 
         // Initialize animations with proper frame sizes and timing
-        idleLeftAnim = Animation(idleLeftTexture, 48, 72, 1, 0.1f);
-        idleRightAnim = Animation(idleRightTexture, 48, 72, 1, 0.1f);
+        idleLeftAnim = Animation(idleLeftTexture, 48, 72, 1, 0.05f);
+        idleRightAnim = Animation(idleRightTexture, 48, 72, 1, 0.05f);
 
-        walkLeftAnim = Animation(walkLeftTexture, 910, 72, 12, 0.1f);
-        walkRightAnim = Animation(walkRightTexture, 910, 72, 12, 0.1f);
+        walkLeftAnim = Animation(walkLeftTexture, 910, 72, 12, 0.05f);
+        walkRightAnim = Animation(walkRightTexture, 910, 72, 12, 0.05f);
 
-        jumpLeftAnim = Animation(jumpLeftTexture, 1108, 72, 16, 0.1f);
-        jumpRightAnim = Animation(jumpRightTexture, 1108, 72, 16, 0.1f);
+        jumpLeftAnim = Animation(jumpLeftTexture, 1108, 72, 16, 0.05f);
+        jumpRightAnim = Animation(jumpRightTexture, 1108, 72, 16, 0.05f);
 
-        specialLeftAnim = Animation(specialLeftTexture, 220, 70, 2, 0.1f);
-        specialRightAnim = Animation(specialRightTexture, 220, 70, 2, 0.1f);
+        specialLeftAnim = Animation(specialLeftTexture, 220, 70, 2, 0.05f);
+        specialRightAnim = Animation(specialRightTexture, 220, 70, 2, 0.05f);
 
         currentAnimation = &idleRightAnim;
 

@@ -5,8 +5,6 @@
 
 #include "Animations.h"
 #include "Hitbox.h"
-#include "Character.h"
-
 
 using namespace std;
 using namespace sf;
@@ -28,7 +26,7 @@ protected:
     bool isCollected;  // Flag to track if this collectible has been collected
 
 public:
-    Collectibles() : isCollected(false), boxlen(32) { position[0] = 0; position[1] = 0; }
+    Collectibles() : isCollected(false), boxlen(32), GameEntity() { position[0] = 0; position[1] = 0; }
 
     virtual ~Collectibles() {}
 

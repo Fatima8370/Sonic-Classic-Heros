@@ -24,12 +24,13 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Animations.h" />
-    <ClInclude Include="BuildLevel.h" />
     <ClInclude Include="Collectibles.h" />
     <ClInclude Include="Enemies.h" />
+    <ClInclude Include="EntityFactory.h" />
     <ClInclude Include="GameEngine.h" />
     <ClInclude Include="Audio.h" />
     <ClInclude Include="GameEntity.h" />
+    <ClInclude Include="BuildLevel.h" />
     <ClInclude Include="Hitbox.h" />
     <ClInclude Include="Level.h" />
     <ClInclude Include="Character.h" />

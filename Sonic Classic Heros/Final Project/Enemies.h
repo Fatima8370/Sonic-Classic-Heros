@@ -6,10 +6,7 @@
 #include <SFML/Window.hpp>
 #include <SFML/Audio.hpp>
 
-#include "Hitbox.h"
-#include "Character.h"
 #include "Animations.h"
-#include "GameEntity.h"
 
 using namespace sf;
 using namespace std;
@@ -197,8 +194,8 @@ public:
         left.loadFromFile("Data/Enemy/batbrainL.png");
         right.loadFromFile("Data/Enemy/batbrainR.png");
 
-        enemyL = Animation(left, 551, 64, 9, 0.1f);
-        enemyR = Animation(right, 551, 64, 9, 0.1f);
+        enemyL = Animation(left, 551, 64, 9, 0.05f);
+        enemyR = Animation(right, 551, 64, 9, 0.05f);
 
         // Customize hitbox for BatBrain
         hitbox = Hitbox(position[0], position[1], 64.0f, 64.0f);
@@ -225,8 +222,8 @@ public:
         left.loadFromFile("Data/Enemy/motobugL.png");
         right.loadFromFile("Data/Enemy/motobugR.png");
 
-        enemyL = Animation(left, 444, 64, 5, 0.1f);
-        enemyR = Animation(right, 444, 64, 5, 0.1f);
+        enemyL = Animation(left, 444, 64, 5, 0.05f);
+        enemyR = Animation(right, 444, 64, 5, 0.05f);
 
         // Customize hitbox for Motobug (typically wider and shorter)
         hitbox = Hitbox(position[0], position[1], 91.0f, 64.0f);
@@ -411,8 +408,8 @@ public:
         left.loadFromFile("Data/Enemy/beebotL.png");
         right.loadFromFile("Data/Enemy/beebotR.png");
 
-        enemyL = Animation(left, 95, 64, 1, 0.1f);
-        enemyR = Animation(right, 95, 64, 1, 0.1f);
+        enemyL = Animation(left, 95, 64, 1, 0.05f);
+        enemyR = Animation(right, 95, 64, 1, 0.05f);
 
         // Set default animation
         currentAnimation = &enemyR;

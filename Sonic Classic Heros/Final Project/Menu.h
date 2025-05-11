@@ -15,35 +15,44 @@ using namespace std;
 
 
 class Leaderboard {
+private:
     float x, y;
-
     static const int Max_Players = 10;
     string names[Max_Players];
     int scores[Max_Players];
     int entryCount;
     Font font;
-
     Texture backgroundTexture;
     Sprite backgroundSprite;
-
     RectangleShape whiteOverlay;
 
 public:
-    Leaderboard( float x, float y) :x(x), y(y), entryCount(0) {
+    Leaderboard(float x, float y) : x(x), y(y), entryCount(0) {
+        // Load font - make sure path is correct
         if (!font.loadFromFile("OOP-Final/SyneMono-Regular.ttf")) {
             cerr << "Font loading failed\n";
         }
+
+        // Load background - make sure path is correct
         if (!backgroundTexture.loadFromFile("Data/background.jpg")) {
             cerr << "Background image not found!\n";
         }
         else {
             backgroundSprite.setTexture(backgroundTexture);
-            backgroundSprite.setScale(0.2, 0.2);
+            // Set scale to cover the entire window
+            float scaleX = x / backgroundTexture.getSize().x;
+            float scaleY = y / backgroundTexture.getSize().y;
+            backgroundSprite.setScale(scaleX, scaleY);
 
-            whiteOverlay.setSize(Vector2f(x,y)); // not use vector
-			whiteOverlay.setPosition(0, 0);
-            whiteOverlay.setFillColor(Color(255, 255, 255, 100)); 
+            // Initialize white overlay with proper dimensions
+            whiteOverlay.setSize(Vector2f(x, y));
+            whiteOverlay.setPosition(0, 0);
+            whiteOverlay.setFillColor(Color(255, 255, 255, 100));
+        }
 
+        // Load the leaderboard data when constructed
+        if (!loadLeaderboard()) {
+            cerr << "Failed to load leaderboard data or file not found\n";
         }
     }
 
@@ -52,12 +61,34 @@ public:
             names[entryCount] = name;
             scores[entryCount] = score;
             entryCount++;
+
+            // Sort after adding a new score
+            sort();
+
+            // Save changes to file
+            saveLeaderboard();
+        }
+        else {
+            // If leaderboard is full, check if this score is higher than the lowest score
+            if (entryCount > 0 && score > scores[entryCount - 1]) {
+                names[entryCount - 1] = name;
+                scores[entryCount - 1] = score;
+
+                // Sort after modifying scores
+                sort();
+
+                // Save changes to file
+                saveLeaderboard();
+            }
         }
     }
 
     bool saveLeaderboard() {
         ofstream out("scores.txt");
-        if (!out) return false;
+        if (!out) {
+            cerr << "Failed to open scores.txt for writing\n";
+            return false;
+        }
 
         for (int i = 0; i < entryCount; ++i) {
             out << names[i] << " " << scores[i] << "\n";
@@ -69,15 +100,35 @@ public:
 
     bool loadLeaderboard() {
         ifstream in("scores.txt");
-        if (!in) return false;
+        if (!in) {
+            cerr << "Failed to open scores.txt for reading or file doesn't exist\n";
+            return false;
+        }
 
         entryCount = 0;
-        while (in >> names[entryCount] >> scores[entryCount]) {
-            entryCount++;
-            if (entryCount >= Max_Players) break;
+        string line;
+        while (getline(in, line) && entryCount < Max_Players) {
+            // Find the last space in the line
+            size_t lastSpace = line.find_last_of(" ");
+            if (lastSpace != string::npos) {
+                names[entryCount] = line.substr(0, lastSpace);
+                try {
+                    scores[entryCount] = stoi(line.substr(lastSpace + 1));
+                    entryCount++;
+                }
+                catch (const exception& e) {
+                    cerr << "Error parsing score: " << e.what() << endl;
+                }
+            }
         }
 
         in.close();
+
+        // Sort the leaderboard after loading
+        if (entryCount > 0) {
+            sort();
+        }
+
         return true;
     }
 
@@ -92,72 +143,121 @@ public:
     }
 
     void sort() {
-
         for (int i = 0; i < entryCount - 1; ++i) {
             for (int j = 0; j < entryCount - i - 1; ++j) {
                 if (scores[j] < scores[j + 1]) {
-
+                    // Swap scores
                     int tempScore = scores[j];
                     scores[j] = scores[j + 1];
                     scores[j + 1] = tempScore;
 
+                    // Swap names
                     string tempName = names[j];
                     names[j] = names[j + 1];
                     names[j + 1] = tempName;
                 }
             }
         }
+    }
 
+    // Helper function to calculate text width for centering
+    float calculateTextWidth(const string& str, int charSize) {
+        return str.length() * charSize * 0.6f;
     }
 
     void draw(RenderWindow& window) {
-        sort();
-
+        // Draw the background
         window.draw(backgroundSprite);
+
+        // Draw semi-transparent overlay
         window.draw(whiteOverlay);
 
-
+        // Draw title
         Text title;
         title.setFont(font);
         title.setCharacterSize(40);
-        title.setFillColor(Color::Yellow);
-        title.setString("Leaderboard");
-        title.setPosition(x / 2 - 120, 40);
+        title.setFillColor(Color::Black);
+        title.setString("LEADERBOARD");
+
+        // Center title
+        float titleWidth = calculateTextWidth("LEADERBOARD", 40);
+        title.setPosition((x - titleWidth) / 2, 40);
+
         window.draw(title);
 
+        // Draw column headers
         Text header;
         header.setFont(font);
         header.setCharacterSize(28);
         header.setFillColor(Color::Blue);
-
-        header.setString("Name");
-        header.setPosition(250, 100);
+        header.setString("RANK");
+        header.setPosition(100, 120);
         window.draw(header);
 
-        header.setString("Score");
-        header.setPosition(850, 100); 
+        header.setString("NAME");
+        header.setPosition(250, 120);
         window.draw(header);
 
+        header.setString("SCORE");
+        header.setPosition(700, 120);
+        window.draw(header);
+
+        // Draw horizontal line
+        RectangleShape headerLine(Vector2f(x - 200, 2));
+        headerLine.setPosition(100, 160);
+        headerLine.setFillColor(Color(0, 0, 0, 128));
+        window.draw(headerLine);
+
+        // Draw entries
         Text entry;
         entry.setFont(font);
         entry.setCharacterSize(24);
-        entry.setFillColor(Color::Black);
 
-        for (int i = 0; i < entryCount && i < 10; ++i) {
-            // Name
+        for (int i = 0; i < entryCount && i < Max_Players; ++i) {
+            // Set alternating row colors
+            if (i % 2 == 0) {
+                entry.setFillColor(Color(0, 0, 0, 255)); // Black for even rows
+            }
+            else {
+                entry.setFillColor(Color(40, 40, 40, 255)); // Dark gray for odd rows
+            }
+
+            // Draw rank
+            entry.setString(to_string(i + 1));
+            entry.setPosition(100, 180 + i * 50);
+            window.draw(entry);
+
+            // Draw name
             entry.setString(names[i]);
-            entry.setPosition(100, 140 + i * 35);
+            entry.setPosition(250, 180 + i * 50);
             window.draw(entry);
 
-            // Score
+            // Draw score
             entry.setString(to_string(scores[i]));
-            entry.setPosition(400, 140 + i * 35);
+            entry.setPosition(700, 180 + i * 50);
             window.draw(entry);
+
+            // Draw separator line between entries
+            RectangleShape entryLine(Vector2f(x - 200, 1));
+            entryLine.setPosition(100, 220 + i * 50);
+            entryLine.setFillColor(Color(0, 0, 0, 64));
+            window.draw(entryLine);
         }
+
+        // Draw instructions at the bottom
+        Text instructions;
+        instructions.setFont(font);
+        instructions.setCharacterSize(18);
+        instructions.setFillColor(Color(0, 0, 0, 200));
+        instructions.setString("Press ESC to return to the main menu");
+
+        // Center instructions
+        float instructionsWidth = calculateTextWidth("Press ESC to return to the main menu", 18);
+        instructions.setPosition((x - instructionsWidth) / 2, y - 60);
+
+        window.draw(instructions);
     }
-
 };
-
 /////////////////////////////////////////////////////////////////////////////////
 
 
