@@ -417,21 +417,7 @@ public:
         window.draw(livesText);
         window.draw(ringsText);
 
-        // Draw pause overlay if paused
-        if (isPaused) {
-            RectangleShape overlay(Vector2f(1280, 896));
-            overlay.setFillColor(Color(0, 0, 0, 128)); // Semi-transparent black
-            window.draw(overlay);
-
-            Text pausedText("PAUSED", font, 48);
-            pausedText.setFillColor(Color::White);
-            FloatRect textBounds = pausedText.getLocalBounds();
-            pausedText.setPosition(
-                (1280 - textBounds.width) / 2,
-                (896 - textBounds.height) / 2
-            );
-            window.draw(pausedText);
-        }
+       
     }
 
     // Set PlayerFactory
