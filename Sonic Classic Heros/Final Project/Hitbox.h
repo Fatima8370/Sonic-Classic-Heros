@@ -108,9 +108,9 @@ public:
         float otherBottom = other.getBottom();
 
 
-        float bottomEdgeHeight = 1.0f; // Small height for the bottom edge
+        float bottomEdgeHeight = 1.0f; 
 
-        // Check if the bottom edge overlaps with the other hitbox
+
         return (thisBottom - bottomEdgeHeight < otherBottom && thisBottom > otherTop &&
             thisLeft < otherRight && thisRight > otherLeft);
     }
@@ -129,7 +129,7 @@ public:
         float otherBottom = other.getBottom();
 
 
-        float leftEdgeWidth = 1.0f; // Small width for the left edge
+        float leftEdgeWidth = 1.0f; 
 
 
         return (thisLeft < otherRight && thisLeft + leftEdgeWidth > otherLeft &&
@@ -150,7 +150,7 @@ public:
         float otherBottom = other.getBottom();
 
 
-        float rightEdgeWidth = 1.0f; // Small width for the right edge
+        float rightEdgeWidth = 1.0f; 
 
 
         return (thisRight - rightEdgeWidth < otherRight && thisRight > otherLeft &&
@@ -166,24 +166,24 @@ public:
             return (topLeftY + 1) * cell_size;
         }
 
-        return -1.0f; // No collision detected
+        return -1.0f; 
     }
 
     bool checkTopCollision(char** grid, const int cell_size, const int maxHeight = 14, const int maxWidth = 300) const {
-        // Calculate grid positions for top collision points
+
         int topLeftX = static_cast<int>((x + leftOffset) / cell_size);
         int topLeftY = static_cast<int>((y + topOffset) / cell_size);
         int topMiddleX = static_cast<int>((x + width / 2) / cell_size);
         int topMiddleY = static_cast<int>((y + topOffset) / cell_size);
         int topRightX = static_cast<int>((x + rightOffset) / cell_size);
         int topRightY = static_cast<int>((y + topOffset) / cell_size);
-        // Check bounds before accessing grid
+
         if (topLeftY < 0 || topLeftY >= maxHeight || topLeftX < 0 || topLeftX >= maxWidth ||
             topMiddleY < 0 || topMiddleY >= maxHeight || topMiddleX < 0 || topMiddleX >= maxWidth ||
             topRightY < 0 || topRightY >= maxHeight || topRightX < 0 || topRightX >= maxWidth) {
             return false;
         }
-        // Check for collision with W, T, or P
+
         return (grid[topLeftY][topLeftX] == 'W' || grid[topLeftY][topLeftX] == 'T' || grid[topLeftY][topLeftX] == 'P' ||
             grid[topMiddleY][topMiddleX] == 'W' || grid[topMiddleY][topMiddleX] == 'T' || grid[topMiddleY][topMiddleX] == 'P' ||
             grid[topRightY][topRightX] == 'W' || grid[topRightY][topRightX] == 'T' || grid[topRightY][topRightX] == 'P');
@@ -201,27 +201,30 @@ public:
         if (checkTopCollision(other)) {
             return other.getBottom();
         }
-        return -1.0f; // No collision detected
+        return -1.0f; 
+
     }
 
     float getBottomCollisionPoint(const Hitbox& other) const {
         if (checkBottomCollision(other)) {
             return other.getTop();
         }
-        return -1.0f; // No collision detected
+        return -1.0f; 
     }
 
     float getLeftCollisionPoint(const Hitbox& other) const {
         if (checkLeftCollision(other)) {
             return other.getRight();
         }
-        return -1.0f; // No collision detected
+        return -1.0f;
+
     }
 
     float getRightCollisionPoint(const Hitbox& other) const {
         if (checkRightCollision(other)) {
             return other.getLeft();
         }
-        return -1.0f; // No collision detected
+        return -1.0f; 
+
     }
 };

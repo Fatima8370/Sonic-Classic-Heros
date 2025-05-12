@@ -1,6 +1,4 @@
 #pragma once
-// EntityFactory.h
-#pragma once
 
 #include <iostream>
 #include <SFML/Graphics.hpp>
@@ -13,12 +11,14 @@ using namespace std;
 using namespace sf;
 
 class EntityFactory {
+    //===========================================================================
+    // PRIVATE MEMBERS
+    //===========================================================================
 private:
     // Factories
     EnemyFactory* enemyFactory;
     CollectibleFactory* collectibleFactory;
     ObstacleFactory* obstacleFactory;
-
     PlayerFactory* playerFactory;
 
     // Entity arrays
@@ -36,7 +36,13 @@ private:
     int width;
     int currentLevel;
 
+    //===========================================================================
+    // PUBLIC METHODS
+    //===========================================================================
 public:
+    //===========================================================================
+    // CONSTRUCTOR & DESTRUCTOR
+    //===========================================================================
     EntityFactory() :
         enemyFactory(nullptr),
         collectibleFactory(nullptr),
@@ -58,6 +64,9 @@ public:
         cleanup();
     }
 
+    //===========================================================================
+    // CLEANUP METHODS
+    //===========================================================================
     void cleanup() {
         // Clean up factories
         if (enemyFactory) {
@@ -116,7 +125,9 @@ public:
         enemyCount = collectibleCount = obstacleCount = 0;
     }
 
-    // Initialize the entity factory for a specific level
+    //===========================================================================
+    // INITIALIZATION & SETUP
+    //===========================================================================
     bool initialize(int levelNum, int h, int w) {
         // Store level info
         currentLevel = levelNum;
@@ -137,16 +148,15 @@ public:
         return true;
     }
 
-    // Set the player factory (typically created externally)
     void setPlayerFactory(PlayerFactory* factory) {
         playerFactory = factory;
     }
 
-    // Create entities from layout grids
+    //===========================================================================
+    // ENTITY CREATION
+    //===========================================================================
     void createEntities(char** enemyLayout, char** collectibleLayout, char** obstacleLayout) {
-
         countEntities(enemyLayout, collectibleLayout, obstacleLayout);
-
 
         enemies = new Enemies * [enemyCount]();
         collectibles = new Collectibles * [collectibleCount]();
@@ -162,7 +172,6 @@ public:
             << obstacleCount << " obstacles" << endl;
     }
 
-
     void countEntities(char** enemyLayout, char** collectibleLayout, char** obstacleLayout) {
         enemyCount = 0;
         collectibleCount = 0;
@@ -176,7 +185,6 @@ public:
             }
         }
     }
-
 
     void createEnemies(char** enemyLayout) {
         int index = 0;
@@ -192,7 +200,6 @@ public:
         }
     }
 
-
     void createCollectibles(char** collectibleLayout) {
         int index = 0;
         for (int i = 0; i < height; i++) {
@@ -206,7 +213,6 @@ public:
             }
         }
     }
-
 
     void createObstacles(char** obstacleLayout) {
         int index = 0;
@@ -222,26 +228,27 @@ public:
         }
     }
 
-    // Update all entities
+    //===========================================================================
+    // UPDATE METHODS
+    //===========================================================================
     void updateEntities(RenderWindow& window, float offsetX, float deltaTime, Player* player) {
-        // Update enemies
         cout << "In Entity FActory Upadte\n";
         if (enemyFactory && enemies) {
             enemyFactory->updateEnemies(window, enemies, enemyCount, offsetX, deltaTime, player);
         }
 
-        // Update collectibles
         if (collectibleFactory && collectibles) {
             collectibleFactory->updateCollectibles(window, collectibles, collectibleCount, offsetX, deltaTime, player);
         }
 
-        // Update obstacles
         if (obstacleFactory && obstacles) {
             obstacleFactory->updateObstacles(window, obstacles, obstacleCount, offsetX, player);
         }
     }
 
-    // Getters
+    //===========================================================================
+    // GETTERS
+    //===========================================================================
     int getEnemyCount() const { return enemyCount; }
     int getCollectibleCount() const { return collectibleCount; }
     int getObstacleCount() const { return obstacleCount; }

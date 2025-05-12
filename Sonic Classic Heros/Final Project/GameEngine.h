@@ -14,10 +14,13 @@ using namespace sf;
 
 class GameEngine {
 private:
+
     // Window properties
     const float screen_x = 1280;
     const float screen_y = 896;
     RenderWindow window;
+
+    
 
     // GameEngine components
     Menu menu;
@@ -51,9 +54,9 @@ private:
     Text prompt;
     Text enterName;
 
-    Level levels[4]; // 3 and 1 boss level
+    Level levels; // 3 and 1 boss level
 
-    Clock clock; // For delta time calculation
+    Clock clock; 
 
 
 public:
@@ -62,15 +65,10 @@ public:
         gameMusic(screen_x, screen_y),
         leaderboard(screen_x, screen_y) {
 
-        levels[0] = Level(1);
-        levels[1] = Level(2);
-        levels[2] = Level(3);
-        levels[3] = Level(4);
 
-        // Load font
         font.loadFromFile("OOP-Final/SyneMono-Regular.ttf");
 
-        // Initialize level select menu
+
         for (int i = 0; i < LEVEL_COUNT - 1; ++i) {
             levelSelect[i].setFont(font);
             levelSelect[i].setString("Level " + std::to_string(i + 1));
@@ -78,13 +76,13 @@ public:
             levelSelect[i].setPosition((screen_x - 150) / 2, (screen_y / 6) * (i + 1));
         }
 
-        // Boss level
+
         levelSelect[LEVEL_COUNT - 1].setFont(font);
         levelSelect[LEVEL_COUNT - 1].setString("Boss Level");
         levelSelect[LEVEL_COUNT - 1].setCharacterSize(24);
         levelSelect[LEVEL_COUNT - 1].setPosition((screen_x - 150) / 2, (screen_y / 6) * LEVEL_COUNT);
 
-        // Set up name entry text
+
         prompt.setString("Enter your name:");
         prompt.setFont(font);
         prompt.setCharacterSize(24);
@@ -97,7 +95,7 @@ public:
         enterName.setStyle(Text::Bold);
         enterName.setPosition(screen_x / 3, screen_y / 3 + 50);
 
-        // Set initial GameEngine state
+
         isMenu = true;
         isPlaying = false;
         isPaused = false;
@@ -121,7 +119,7 @@ public:
                     window.close();
                 }
 
-                // Handle input based on game state
+
                 if (isNameEntry) {
                     handleNameEntryInput(ev);
                 }
@@ -156,7 +154,7 @@ public:
     }
 
 private:
-    // Handle input in the main menu
+
     void handleMenuInput(Event& ev) {
         if (ev.type == Event::KeyPressed) {
             if (ev.key.code == Keyboard::Up) {
@@ -171,7 +169,7 @@ private:
         }
     }
 
-    // Handle input in the leaderboard view
+
     void handleLeaderboardInput(Event& ev) {
         if (ev.type == Event::KeyPressed) {
             if (ev.key.code == Keyboard::Escape) {
@@ -181,7 +179,7 @@ private:
         }
     }
 
-    // Handle input in the options menu
+
     void handleOptionsInput(Event& ev) {
         gameMusic.handleInput(ev);
 
@@ -193,18 +191,18 @@ private:
         }
     }
 
-    // Handle input during gameplay
+
     void handleGameInput(Event& ev) {
-        // Add the missing Escape key handling for gameplay state
+
         if (ev.type == Event::KeyPressed) {
             if (ev.key.code == Keyboard::Escape) {
                 isPaused = true;
             }
-            // Other gameplay input handling can go here
+
         }
     }
 
-    // Handle input while game is paused
+
     void handlePauseInput(Event& ev) {
         if (ev.type == Event::KeyPressed) {
             if (ev.key.code == Keyboard::Enter) {
@@ -218,7 +216,7 @@ private:
         }
     }
 
-    // Handle name entry input
+
     void handleNameEntryInput(Event& ev) {
         if (ev.type == Event::KeyPressed) {
             if (ev.key.code == Keyboard::Return || ev.key.code == Keyboard::Enter) {
@@ -230,7 +228,7 @@ private:
                 }
             }
             else if (ev.key.code == Keyboard::Escape) {
-                // Allow going back to menu
+
                 isNameEntry = false;
                 isMenu = true;
             }
@@ -251,7 +249,7 @@ private:
         }
     }
 
-    // Handle level selection input
+
     void handleLevelSelectInput(Event& ev) {
         if (ev.type == Event::KeyPressed) {
             if (ev.key.code == Keyboard::Up) {
@@ -266,29 +264,30 @@ private:
                 currentLevel = selectedIndex + 1;
             }
             else if (ev.key.code == Keyboard::Escape) {
-                // Allow going back to menu from level select
+
                 isLevelSelect = false;
                 isMenu = true;
             }
         }
     }
 
-    // Handle loading screen input
+
     void handleLoadScreenInput(Event& ev) {
         if (ev.type == Event::KeyPressed) {
             if (ev.key.code == Keyboard::Enter) {
+
                 isLoadScreen = false;
                 isPlaying = true;
             }
             else if (ev.key.code == Keyboard::Escape) {
-                // Allow going back to level select from loading screen
+
                 isLoadScreen = false;
                 isLevelSelect = true;
             }
         }
     }
 
-    // Process menu selection
+
     void handleMenuSelection(int selectedOption) {
         switch (selectedOption) {
 
@@ -311,12 +310,12 @@ private:
         }
     }
 
-    // Start a new game
+
     void startNewGame() {
         isMenu = false;
         isNameEntry = true;
 
-        // Reset player name for new entry
+
         playerName = "";
         enterName.setString(playerName);
 
@@ -337,34 +336,32 @@ private:
         }
     }
 
-    // Load a specific level
+
     void loadLevel(int level) {
         currentLevel = level;
         isPlaying = true;
 
-        // Add level loading logic here
+
         switch (level) {
         case 1:
-            // Load level 1
+			levels = Level(1);
             break;
         case 2:
-            // Load level 2
+			levels = Level(2);
             break;
-        case 3:
-            // Load level 3
+        case 3:            
+			levels = Level(3);
             break;
         case 4:
-            // Load boss level
+            levels = Level(4);
             break;
         }
     }
 
-    // Update game state
     void updateGame() {
 
     }
 
-    // Render the game
     void render(RenderWindow& window, float deltaTime) {
         window.clear();
 
@@ -398,12 +395,10 @@ private:
         window.display();
     }
 
-    // Calculate approximate text width based on character count and size
     float calculateTextWidth(const string& str, int charSize) {
         return str.length() * charSize * 0.6f;
     }
 
-    // Render name entry screen
     void renderNameEntry() {
 
         Text nameTitle("ENTER YOUR NAME", font, 36);
@@ -428,7 +423,6 @@ private:
             window.draw(cursorText);
         }
 
-        // Add instruction text
         Text instruction("Press ESC to return to menu", font, 18);
         instruction.setFillColor(Color(200, 200, 200));
         float instructionWidth = calculateTextWidth("Press ESC to return to menu", 18);
@@ -440,7 +434,6 @@ private:
         window.draw(instruction);
     }
 
-    // Render level selection screen
     void renderLevelSelect() {
 
         Text selectTitle("SELECT LEVEL", font, 36);
@@ -469,7 +462,6 @@ private:
             window.draw(levelSelect[i]);
         }
 
-        // Add instruction for returning to menu
         Text instruction("Press ESC to return to menu", font, 18);
         instruction.setFillColor(Color(200, 200, 200));
         float instructionWidth = calculateTextWidth("Press ESC to return to menu", 18);
@@ -534,14 +526,8 @@ private:
         float continueWidth = calculateTextWidth("Press ENTER to continue", 24);
         continueText.setPosition((screen_x - continueWidth) / 2, screen_y / 2 + 20);
 
-        Text exitText("Press ESC to return to main menu", font, 24);
-        exitText.setFillColor(Color::White);
-        float exitWidth = calculateTextWidth("Press ESC to return to main menu", 24);
-        exitText.setPosition((screen_x - exitWidth) / 2, screen_y / 2 + 60);
-
         window.draw(pauseText);
         window.draw(continueText);
-        window.draw(exitText);
     }
 
 
@@ -550,14 +536,14 @@ private:
 
 
             
-            levels[selectedIndex].update(window, deltaTime); // Example delta time
-			levels[selectedIndex].render(window); // Render the current level
+            levels.update(window, deltaTime); 
+			levels.render(window); 
 
 
 
             Text escapeText("ESC: Pause", font, 14);
-            escapeText.setFillColor(Color(200, 200, 200, 180)); // Slight transparency
-            escapeText.setPosition(1240, 10); // Top-left corner
+            escapeText.setFillColor(Color(200, 200, 200, 180)); 
+            escapeText.setPosition(1240, 10); 
             window.draw(escapeText);
         }
     }

@@ -11,6 +11,9 @@
 using namespace sf;
 using namespace std;
 
+//===========================================================================
+// BASE ENEMIES CLASS
+//===========================================================================
 class Enemies : public GameEntity {
 
 protected:
@@ -29,19 +32,20 @@ protected:
     SoundBuffer sound;
     Sound dying;
 
-
     Animation enemyL;
     Animation enemyR;
-    Animation* currentAnimation; // Pointer to current animation
+    Animation* currentAnimation;
 
 public:
+    //===========================================================================
+    // CONSTRUCTOR & DESTRUCTOR
+    //===========================================================================
     Enemies() : area(500.0f), active(true), died(false) {
         initialX = 1200.0f;
         initialY = 600.0f;
         position[0] = initialX;
         position[1] = initialY;
 
-        // Initialize the hitbox
         hitbox = Hitbox(position[0], position[1], 50.0f, 50.0f);
 
         sound.loadFromFile("Data/sounds/punch.wav");
@@ -50,37 +54,38 @@ public:
         dying.setPlayingOffset(seconds(0.0f));
         dying.setVolume(100);
 
-        // Set default animation to right (will be updated in update())
         currentAnimation = &enemyR;
     }
 
     virtual ~Enemies() = default;
 
+    //===========================================================================
+    // OVERRIDE METHODS
+    //===========================================================================
     void draw(RenderWindow& window, float directionFaced, float offset) override {}
 
     void update(char** grid, const int cell_size) override {}
 
-    bool detectArea(float playerX, float playerY) const {
-        return (position[0] + area >= playerX && position[0] - area <= playerX);
-    }
-
-    // Updated to use hitbox collision
-    virtual void die(const Hitbox& playerHitbox) {
-        if (hitbox.checkCollision(playerHitbox) && !died) {
-            dying.play();
-            died = true;
-        }
-    }
-
-    virtual void render(RenderWindow& window, float offset) override {
+    void render(RenderWindow& window, float offset) override {
         if (!died) {
-            // Update current animation position
             if (currentAnimation) {
                 currentAnimation->setPosition(position[0] - offset, position[1]);
                 currentAnimation->draw(window);
             }
+        }
+    }
 
-            //drawHitbox(window, offset);
+    //===========================================================================
+    // ENEMY BEHAVIOR METHODS
+    //===========================================================================
+    bool detectArea(float playerX, float playerY) const {
+        return (position[0] + area >= playerX && position[0] - area <= playerX);
+    }
+
+    virtual void die(const Hitbox& playerHitbox) {
+        if (hitbox.checkCollision(playerHitbox) && !died) {
+            dying.play();
+            died = true;
         }
     }
 
@@ -94,16 +99,10 @@ public:
         window.draw(hitboxRect);
     }
 
-
-//===========================================================================
-// UPDATE & GAME LOGIC METHODS
-//===========================================================================
-
-
-
-    // Modified to handle all enemy types in one common method
+    //===========================================================================
+    // UPDATE & GAME LOGIC METHODS
+    //===========================================================================
     virtual void update(float playerX, float playerY, float deltaTime) {
-        // Update animation based on direction
         if (speed < 0) {
             currentAnimation = &enemyL;
         }
@@ -111,26 +110,25 @@ public:
             currentAnimation = &enemyR;
         }
 
-        // Update animation frames
         if (currentAnimation) {
             currentAnimation->update(deltaTime);
         }
 
-        // Update hitbox position to match enemy position
         hitbox.updateHitbox(position[0], position[1]);
     }
 
+    //===========================================================================
+    // GETTERS & SETTERS
+    //===========================================================================
     void setPosition(float newX, float newY) {
         position[0] = newX;
         position[1] = newY;
         initialX = newX;
         initialY = newY;
 
-        // Update hitbox position
         hitbox.updateHitbox(position[0], position[1]);
     }
 
-    // Getter for the hitbox object
     const Hitbox& getHitbox() const {
         return hitbox;
     }
@@ -140,26 +138,24 @@ public:
     bool isDead() const { return died; }
 };
 
+//===========================================================================
+// FOLLOWING TYPE ENEMIES
+//===========================================================================
 class FollowingType : public Enemies {
 public:
     FollowingType() {
-        // Customize hitbox size for following type enemies
         hitbox = Hitbox(position[0], position[1], 50.0f, 50.0f);
     }
 
     void update(float playerX, float playerY, float deltaTime) override {
         if (detectArea(playerX, playerY) && !died) {
-
             followPlayer(playerX);
-            // Note: die() will be called in the EnemyFactory::updateEnemies method
         }
         else {
-            // Return to initial position but stay visible
             position[0] = initialX;
             position[1] = initialY;
         }
 
-        // Update animation based on direction
         if (speed < 0) {
             currentAnimation = &enemyL;
         }
@@ -167,27 +163,28 @@ public:
             currentAnimation = &enemyR;
         }
 
-        // Update animation frames
         if (currentAnimation) {
             currentAnimation->update(deltaTime);
         }
 
-        // Update hitbox position
         hitbox.updateHitbox(position[0], position[1]);
     }
 
     void followPlayer(float playerX) {
         if (playerX > position[0]) {
             position[0] += abs(speed);
-            speed = abs(speed); // Positive speed means moving right
+            speed = abs(speed);
         }
         else {
             position[0] -= abs(speed);
-            speed = -abs(speed); // Negative speed means moving left
+            speed = -abs(speed);
         }
     }
 };
 
+//===========================================================================
+// BAT BRAIN ENEMY
+//===========================================================================
 class BatBrain : public FollowingType {
 public:
     BatBrain() {
@@ -197,25 +194,24 @@ public:
         enemyL = Animation(left, 551, 64, 9, 0.05f);
         enemyR = Animation(right, 551, 64, 9, 0.05f);
 
-        // Customize hitbox for BatBrain
         hitbox = Hitbox(position[0], position[1], 64.0f, 64.0f);
 
-        // Set default animation
         currentAnimation = &enemyR;
     }
 
-    // Override the die method to use hitbox
     void die(const Hitbox& playerHitbox) override {
         if (hitbox.checkCollision(playerHitbox) && !died) {
             cout << "BatBrain ded " << position[0] << ' ' << position[1] << "\n";
 
             dying.play();
             died = true;
-           // position[0] = 0; position[1] = 0;
         }
     }
 };
 
+//===========================================================================
+// MOTOBUG ENEMY
+//===========================================================================
 class Motobug : public FollowingType {
 public:
     Motobug() {
@@ -225,10 +221,8 @@ public:
         enemyL = Animation(left, 444, 64, 5, 0.05f);
         enemyR = Animation(right, 444, 64, 5, 0.05f);
 
-        // Customize hitbox for Motobug (typically wider and shorter)
         hitbox = Hitbox(position[0], position[1], 91.0f, 64.0f);
 
-        // Set default animation
         currentAnimation = &enemyR;
     }
 
@@ -238,11 +232,13 @@ public:
 
             dying.play();
             died = true;
-            //position[0] = 0; position[1] = 0;
         }
     }
 };
 
+//===========================================================================
+// SHOOTING TYPE ENEMIES
+//===========================================================================
 class ShootingType : public Enemies {
 protected:
     float shootingCooldown;
@@ -255,7 +251,6 @@ protected:
     float bulletX, bulletY;
     float bulletDX, bulletDY;
 
-    // Add hitbox for bullet
     Hitbox bulletHitbox;
 
 public:
@@ -267,28 +262,27 @@ public:
         bulletSprite.setScale(1.0f, 1.0f);
         bulletActive = false;
 
-        // Initialize bullet hitbox (small size for projectile)
         bulletHitbox = Hitbox(0, 0, 16.0f, 16.0f);
 
         position[1] -= 200;
 
-        // Customize hitbox for shooting type enemies
         hitbox = Hitbox(position[0], position[1], 50.0f, 50.0f);
     }
 
+    //===========================================================================
+    // SHOOTING ENEMY METHODS
+    //===========================================================================
     Hitbox& getBulletHitbox() {
         return bulletHitbox;
     }
 
     void render(RenderWindow& window, float offset) override {
         if (!died) {
-            // Draw current animation
             if (currentAnimation) {
                 currentAnimation->setPosition(position[0] - offset, position[1]);
                 currentAnimation->draw(window);
             }
 
-            // Optional: Draw hitbox for debugging
             drawHitbox(window, offset);
         }
 
@@ -296,12 +290,10 @@ public:
             bulletSprite.setPosition(bulletX - offset, bulletY);
             window.draw(bulletSprite);
 
-            // Optional: Draw bullet hitbox for debugging
             drawBulletHitbox(window, offset);
         }
     }
 
-    // Optional: Helper method to visualize bullet hitbox for debugging
     void drawBulletHitbox(RenderWindow& window, float offset) {
         RectangleShape bulletHitboxRect;
         bulletHitboxRect.setPosition(bulletHitbox.getX() - offset, bulletHitbox.getY());
@@ -314,27 +306,25 @@ public:
 
     void update(float playerX, float playerY, float deltaTime) override {
         if (detectArea(playerX, playerY) && !died) {
-            // Movement
             float dx = playerX - position[0];
             if (abs(dx) > 200.0f) {
                 if (dx > 0) {
                     position[0] += abs(speed);
-                    speed = abs(speed); // Moving right
+                    speed = abs(speed);
                 }
                 else {
                     position[0] -= abs(speed);
-                    speed = -abs(speed); // Moving left
+                    speed = -abs(speed);
                 }
             }
             else {
                 cooldownTime += deltaTime;
                 if (cooldownTime >= shootingCooldown) {
                     shootProjectile(playerX, playerY);
-                    cooldownTime = 0; // Reset cooldown after shooting
+                    cooldownTime = 0;
                 }
             }
 
-            // Update animation based on direction
             if (speed < 0) {
                 currentAnimation = &enemyL;
             }
@@ -346,12 +336,10 @@ public:
             cooldownTime = 0;
         }
 
-        // Update animation frames
         if (currentAnimation) {
             currentAnimation->update(deltaTime);
         }
 
-        // Update enemy hitbox
         hitbox.updateHitbox(position[0], position[1]);
 
         updateProjectiles();
@@ -363,7 +351,6 @@ public:
             bulletY += bulletDY;
             bulletSprite.setPosition(bulletX, bulletY);
 
-            // Update bullet hitbox
             bulletHitbox.updateHitbox(bulletX, bulletY);
 
             if (bulletX < position[0] - area || bulletX > position[0] + area || bulletY < 0 || bulletY > 1000)
@@ -371,7 +358,6 @@ public:
         }
     }
 
-    // Method to check if bullet hits player
     bool checkBulletCollision(const Hitbox& playerHitbox) {
         if (bulletActive) {
             return bulletHitbox.checkCollision(playerHitbox);
@@ -396,12 +382,14 @@ public:
             bulletSprite.setPosition(position[0], position[1]);
             bulletActive = true;
 
-            // Reset bullet hitbox position
             bulletHitbox.updateHitbox(bulletX, bulletY);
         }
     }
 };
 
+//===========================================================================
+// BEEBOT ENEMY
+//===========================================================================
 class BeeBot : public ShootingType {
 public:
     BeeBot() {
@@ -411,7 +399,6 @@ public:
         enemyL = Animation(left, 95, 64, 1, 0.05f);
         enemyR = Animation(right, 95, 64, 1, 0.05f);
 
-        // Set default animation
         currentAnimation = &enemyR;
 
         position[1] -= 150;
@@ -425,11 +412,13 @@ public:
 
             dying.play();
             died = true;
-           // position[0] = 0; position[1] = 0;
         }
     }
 };
 
+//===========================================================================
+// CRABMEAT ENEMY
+//===========================================================================
 class CrabMeat : public ShootingType {
 public:
     CrabMeat() {
@@ -439,10 +428,8 @@ public:
         enemyL = Animation(left, 1020, 64, 10, 0.1f);
         enemyR = Animation(right, 1020, 64, 10, 0.1f);
 
-        // Set default animation
         currentAnimation = &enemyR;
 
-        // Customize hitbox for CrabMeat 
         hitbox = Hitbox(position[0], position[1], 102.0f, 64.0f);
     }
 
@@ -452,11 +439,13 @@ public:
 
             dying.play();
             died = true;
-           // position[0] = 0; position[1] = 0;
         }
     }
 };
 
+//===========================================================================
+// EGGSTINGER BOSS ENEMY
+//===========================================================================
 class EggStinger : public ShootingType {
 private:
     int hp;
@@ -468,34 +457,28 @@ public:
         right.loadFromFile("Data/Enemy/eggstingerR.png");
         enemyL = Animation(left, 128, 128, 1, 0.1f);
         enemyR = Animation(right, 128, 128, 1, 0.1f);
-        // Set default animation
         currentAnimation = &enemyR;
-        position[0] = initialX; // Start at initial X position
-        position[1] = 150.0f;   // Fixed hover height
+        position[0] = initialX;
+        position[1] = 150.0f;
         active = true;
-        hp = 20; // Set boss HP to 20
-        // Initialize speed for left-right movement
-        speed = 100.0f; // Adjust this value for desired speed
-        // Customize hitbox for EggStinger boss (larger hitbox)
+        hp = 20;
+        speed = 100.0f;
         hitbox = Hitbox(position[0], position[1], 128.0f, 128.0f);
     }
 
     void update(float playerX, float playerY, float deltaTime) override {
         if (!died) {
-            // Hover left-to-right
-            position[0] += speed *5* deltaTime;
+            position[0] += speed * 5 * deltaTime;
 
-            // Change direction when reaching limits
             if (position[0] < initialX - 600) {
-                speed = abs(speed); // Change direction to right
+                speed = abs(speed);
                 currentAnimation = &enemyR;
             }
             else if (position[0] > initialX + 600) {
-                speed = -abs(speed); // Change direction to left
+                speed = -abs(speed);
                 currentAnimation = &enemyL;
             }
 
-            // Update animation based on direction
             if (speed < 0) {
                 currentAnimation = &enemyL;
             }
@@ -503,12 +486,10 @@ public:
                 currentAnimation = &enemyR;
             }
 
-            // Update animation frames
             if (currentAnimation) {
                 currentAnimation->update(deltaTime);
             }
 
-            // Update hitbox position
             hitbox.updateHitbox(position[0], position[1]);
         }
 
@@ -517,13 +498,11 @@ public:
 
     void render(RenderWindow& window, float offset) override {
         if (!died) {
-            // Draw current animation
             if (currentAnimation) {
                 currentAnimation->setPosition(position[0] - offset, position[1]);
                 currentAnimation->draw(window);
             }
 
-            // Optional: Draw hitbox for debugging
             drawHitbox(window, offset);
         }
 
@@ -531,7 +510,6 @@ public:
             bulletSprite.setPosition(bulletX - offset, bulletY);
             window.draw(bulletSprite);
 
-            // Optional: Draw bullet hitbox for debugging
             drawBulletHitbox(window, offset);
         }
     }
@@ -541,8 +519,6 @@ public:
             hp--;
             cout << "EggStinger hit: " << (20 - hp) << "/20\n";
 
-            // Add invincibility frames or knockback here if needed
-
             if (hp <= 0) {
                 cout << "EggStinger Neutralized\n";
                 dying.play();
@@ -551,6 +527,10 @@ public:
         }
     }
 };
+
+//===========================================================================
+// ENEMY FACTORY
+//===========================================================================
 class EnemyFactory {
 private:
     int gridHeight, gridWidth;
@@ -564,10 +544,11 @@ public:
     }
 
     ~EnemyFactory() {
-        // No need to manage arrays in the factory
     }
 
-    // Create a single enemy
+    //===========================================================================
+    // ENEMY CREATION METHODS
+    //===========================================================================
     Enemies* createEnemy(const char& type, float spawnX, float spawnY) {
         Enemies* enemy = nullptr;
 
@@ -584,9 +565,10 @@ public:
         return enemy;
     }
 
-    // Update an array of enemies
+    //===========================================================================
+    // UPDATE METHODS
+    //===========================================================================
     void updateEnemies(RenderWindow& window, Enemies** enemies, int enemyCount, float offsetX, float deltaTime, Player* player) {
-
         const Hitbox playerHitbox = player->getHitbox();
         bool attack = player->getIsJumping();
 
@@ -600,8 +582,6 @@ public:
                 }
 
                 if (enemies[i]->isDead()) {
-                    // We should not delete enemies immediately after setting died to true
-                    // The sound needs time to play
                     if (enemies[i]->getX() == 0 && enemies[i]->getY() == 0) {
                         delete enemies[i];
                         enemies[i] = nullptr;
@@ -611,11 +591,9 @@ public:
                     player->takeDamage(enemies[i]->getHitbox());
                 }
 
-                // Check if shooting enemy's bullets hit player
                 ShootingType* shootingEnemy = dynamic_cast<ShootingType*>(enemies[i]);
                 if (shootingEnemy) {
                     if (shootingEnemy->checkBulletCollision(playerHitbox)) {
-                        // Player is hit by bullet, handle damage here
                         cout << "Player hit by bullet!" << endl;
                         player->takeDamage(shootingEnemy->getBulletHitbox());
                     }
