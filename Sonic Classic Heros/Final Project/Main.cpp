@@ -37,6 +37,7 @@ int main()
 
     PlayerFactory factory(width);
 
+    
 
     for (int i = 0; i < 3; i++) {
         Player* player = factory.getPlayer(i);
