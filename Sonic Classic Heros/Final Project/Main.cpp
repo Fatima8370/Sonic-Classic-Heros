@@ -49,7 +49,7 @@ int main()
     Player* activePlayer = factory.getActivePlayer();
 
     BuildLevel level;
-    level.loadLevel(2);
+    level.loadLevel(1);
 
     Clock clock;
 

@@ -304,12 +304,7 @@ public:
         if (onGround) {
             velocity[1] = jumpStrength;
             isJumping = true;
-            onGround = false;
-
-            cout << "Player: Jumping with strength " << jumpStrength << "!" << endl;
-
-            // Play jump sound if available
-            
+            onGround = false;            
         }
     }
 
@@ -337,7 +332,7 @@ public:
                 if (collisionPoint > 0) {
                     position[1] = collisionPoint;
                     velocity[1] = 0.0f;
-                    cout << "Player: Hit ceiling at position Y = " << collisionPoint << endl;
+                    //cout << "Player: Hit ceiling at position Y = " << collisionPoint << endl;
                 }
             }
         }
@@ -369,7 +364,7 @@ public:
             onGround = true;
 
             if (velocity[1] > 5.0f) {
-                cout << "Player: Landed on ground from falling velocity " << velocity[1] << endl;
+               // cout << "Player: Landed on ground from falling velocity " << velocity[1] << endl;
             }
         }
         else {
@@ -471,7 +466,7 @@ public:
             // Horizontal teleport if too far away
             if (position[0] < leaderPosition[0] - maxFollowLimit) {
                 position[0] = leaderPosition[0] - followDistance;
-                cout << "Follower: Teleported horizontally to stay within maxFollowLimit" << endl;
+                //cout << "Follower: Teleported horizontally to stay within maxFollowLimit" << endl;
             }
 
             // NEW: Vertical teleport if fallen too far
@@ -479,14 +474,14 @@ public:
                 position[1] = leaderPosition[1];
                 velocity[1] = 0.0f;
                 onGround = true;
-                cout << "Follower: Teleported vertically to rejoin leader" << endl;
+               // cout << "Follower: Teleported vertically to rejoin leader" << endl;
             }
 
 
             // Jump when leader is jumping
             if (leader->getIsJumping() && leaderPosition[1] < position[1] - jumpLimit) {
                 jump();
-                cout << "Follower: Jumping to follow leader" << endl;
+               // cout << "Follower: Jumping to follow leader" << endl;
             }
         }
     }
@@ -506,8 +501,8 @@ public:
             invincibilityTimer = invincibilityLimit;
             hp -= 10;
 
-            cout << "Player: Took damage! HP: " << hp << endl;
-            cout << "Player: Now invincible for " << invincibilityLimit << " seconds." << endl;
+           // cout << "Player: Took damage! HP: " << hp << endl;
+            //cout << "Player: Now invincible for " << invincibilityLimit << " seconds." << endl;
 
             // Play damage sound if available
             
@@ -516,12 +511,12 @@ public:
         if (hp <= 0) {
             lives--;
             hp = 100;
-            cout << "Player: Lost a life! Lives remaining: " << lives << endl;
+           // cout << "Player: Lost a life! Lives remaining: " << lives << endl;
         }
 
         if (lives <= 0) {
             // Lose condition
-            cout << "Player: Game over! No lives remaining." << endl;
+            //cout << "Player: Game over! No lives remaining." << endl;
             exit(0);
             // EXIT SCREEN OR DISPLAY GAME OVER
         }
@@ -622,7 +617,7 @@ public:
                 if (collisionPoint > 0) {
                     position[1] = collisionPoint;
                     velocity[1] = 0.0f;
-                    cout << "Tails: Hit ceiling at position Y = " << collisionPoint << endl;
+                    //cout << "Tails: Hit ceiling at position Y = " << collisionPoint << endl;
                 }
             }
 
@@ -649,7 +644,7 @@ public:
                 velocity[1] = 0.0f;
                 onGround = true;
                 isUsingSpecialAbility = false;
-                cout << "Tails: Landed on ground at position Y = " << collisionY << ", flight mode ended" << endl;
+               // cout << "Tails: Landed on ground at position Y = " << collisionY << ", flight mode ended" << endl;
             }
             else {
                 position[1] = offsetY;
@@ -751,8 +746,8 @@ public:
             isUsingSpecialAbility = true;
             specialAbilityTimer = specialAbilityLimit;
             speed = normalSpeed + 7.0f;
-            cout << "Sonic: Speed boost activated! Speed increased from " << normalSpeed
-                << " to " << speed << " for " << specialAbilityLimit << " seconds" << endl;
+           // cout << "Sonic: Speed boost activated! Speed increased from " << normalSpeed
+             //   << " to " << speed << " for " << specialAbilityLimit << " seconds" << endl;
 
        
         }
@@ -761,8 +756,8 @@ public:
     void Boosts() override {
         if (isUsingSpecialAbility) {
             speed = normalSpeed + 11.0f;  // Increased boost
-            cout << "Sonic: Power boost! Speed increased further to " << speed
-                << " (+" << (speed - normalSpeed) << " from normal)" << endl;
+           // cout << "Sonic: Power boost! Speed increased further to " << speed
+             //   << " (+" << (speed - normalSpeed) << " from normal)" << endl;
         }
     }
 
@@ -962,7 +957,7 @@ public:
             }
         }
 
-        cout << "PlayerFactory: All players created and initialized" << endl;
+       // cout << "PlayerFactory: All players created and initialized" << endl;
     }
     //===========================================================================
     // PLAYER ACCESS METHODS
@@ -1008,9 +1003,9 @@ public:
             }
         }
 
-        cout << "PlayerFactory: Switched to player " << activePlayerIndex + 1
-            << " (" << (activePlayerIndex == 0 ? "Sonic" :
-                activePlayerIndex == 1 ? "Tails" : "Knuckles") << ")" << endl;
+     //   cout << "PlayerFactory: Switched to player " << activePlayerIndex + 1
+       //     << " (" << (activePlayerIndex == 0 ? "Sonic" :
+         //       activePlayerIndex == 1 ? "Tails" : "Knuckles") << ")" << endl;
     }
 
     void playerSwitchHandling(Event& event) {
@@ -1054,7 +1049,7 @@ public:
 
         // Check for game over condition (falling into pit)
         if (activePlayer->getY() >= 832) {
-            cout << "PlayerFactory: GAME OVER - Player fell into bottomless pit!" << endl;
+           // cout << "PlayerFactory: GAME OVER - Player fell into bottomless pit!" << endl;
             // exit(0); // Commented out to prevent immediate termination
         }
     }

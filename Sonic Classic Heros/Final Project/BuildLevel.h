@@ -241,7 +241,7 @@ public:
     }
 
     void update(RenderWindow& window, float offsetX, float deltaTime, Player* player) {
-        cout << "In buildLevel Update\n";
+       // cout << "In buildLevel Update\n";
         if (entityFactory) {
             entityFactory->updateEntities(window, offsetX, deltaTime, player);
         }

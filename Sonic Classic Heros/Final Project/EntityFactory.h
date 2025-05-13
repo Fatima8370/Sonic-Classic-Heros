@@ -232,7 +232,7 @@ public:
     // UPDATE METHODS
     //===========================================================================
     void updateEntities(RenderWindow& window, float offsetX, float deltaTime, Player* player) {
-        cout << "In Entity FActory Upadte\n";
+
         if (enemyFactory && enemies) {
             enemyFactory->updateEnemies(window, enemies, enemyCount, offsetX, deltaTime, player);
         }
