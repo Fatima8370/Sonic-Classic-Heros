@@ -1,0 +1,8 @@
+To Do :
+
+. Integrate the entire game
+. Add User Interface
+. Add Level Difficulty (friction, gravity , etc...)
+. Add Sound Effects
+. Update leaderboard code (retains memory somehow??)
+. Fix Animations

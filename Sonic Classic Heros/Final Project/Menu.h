@@ -182,7 +182,7 @@ public:
 
         window.draw(title);
 
-      
+
         Text header;
         header.setFont(font);
         header.setCharacterSize(28);
@@ -199,7 +199,7 @@ public:
         header.setPosition(700, 120);
         window.draw(header);
 
-       
+
 
 
         Text entry;
@@ -209,10 +209,10 @@ public:
         for (int i = 0; i < entryCount && i < Max_Players; ++i) {
 
             if (i % 2 == 0) {
-                entry.setFillColor(Color(0, 0, 0, 255)); 
+                entry.setFillColor(Color(0, 0, 0, 255));
             }
             else {
-                entry.setFillColor(Color(40, 40, 40, 255)); 
+                entry.setFillColor(Color(40, 40, 40, 255));
             }
 
             entry.setString(to_string(i + 1));
@@ -227,7 +227,7 @@ public:
             entry.setPosition(700, 180 + i * 50);
             window.draw(entry);
 
-           
+
         }
 
     }
